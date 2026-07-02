@@ -1,6 +1,7 @@
 import '@xyflow/react/dist/style.css'
 import { ReactFlowProvider } from '@xyflow/react'
 import { useEffect, useState } from 'react'
+import { GuidePanel } from './guide/GuidePanel'
 import { Canvas } from './ui/Canvas'
 import { LensRail } from './ui/LensRail'
 import { RightPanel } from './ui/RightPanel'
@@ -37,7 +38,7 @@ function App() {
       </div>
 
       <div className="hidden md:col-start-3 md:row-start-2 md:block">
-        <RightPanel />
+        <RightPanel guideSlot={<GuidePanel />} />
       </div>
     </div>
   )
