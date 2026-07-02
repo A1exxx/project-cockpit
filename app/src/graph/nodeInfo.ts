@@ -12,7 +12,9 @@ export function ancestorPath(doc: MapDoc, id: string): string[] {
 
   const chain: string[] = []
   let parentId = node.parent
-  while (parentId !== null) {
+  // Ограничитель — страховка от цикла в parent-цепочке битых данных
+  // (иначе бесконечный while вешает вкладку; код-ревью).
+  while (parentId !== null && chain.length <= doc.nodes.length) {
     chain.unshift(parentId)
     parentId = byId.get(parentId)?.parent ?? null
   }

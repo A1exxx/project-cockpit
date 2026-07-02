@@ -9,7 +9,7 @@ import {
   Compass,
 } from '@phosphor-icons/react'
 import { AnimatePresence, motion } from 'motion/react'
-import { useMemo, useState } from 'react'
+import { useMemo, useRef, useState } from 'react'
 import { useCockpitStore } from '../store'
 import { buildAgentTask } from './agentTask'
 import { applyStepAction, clampStepIndex, createTour, type GuideApi } from './engine'
@@ -196,14 +196,22 @@ function AskMode() {
     setError(null)
   }
 
+  const abortRef = useRef<AbortController | null>(null)
+
   async function handleAsk(questionText: string) {
     if (!key || !questionText.trim() || loading) return
+    // Отменяем предыдущий незавершённый запрос — иначе поздний ответ
+    // перезапишет состояние чужого вопроса (код-ревью, MED).
+    abortRef.current?.abort()
+    const controller = new AbortController()
+    abortRef.current = controller
     setLastQuestion(questionText)
     setLoading(true)
     setError(null)
     setAnswer(null)
     const digest = buildMapDigest(doc)
-    const result = await askGemini(key, digest, questionText)
+    const result = await askGemini(key, digest, questionText, controller.signal)
+    if (controller.signal.aborted) return
     setLoading(false)
     if (result.ok) {
       setAnswer(result.text)

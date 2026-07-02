@@ -1,5 +1,6 @@
 import '@xyflow/react/dist/style.css'
 import { ReactFlowProvider } from '@xyflow/react'
+import { MotionConfig } from 'motion/react'
 import { useEffect, useState } from 'react'
 import { GuidePanel } from './guide/GuidePanel'
 import { Canvas } from './ui/Canvas'
@@ -21,6 +22,9 @@ function App() {
   const [wizardOpen, setWizardOpen] = useState(false)
 
   return (
+    // reducedMotion="user": JS-пружины motion уважают prefers-reduced-motion
+    // (CSS-клэмп в index.css их не покрывает) — impeccable polish.
+    <MotionConfig reducedMotion="user">
     <div className="flex h-full flex-col md:grid md:grid-cols-[auto_1fr_auto] md:grid-rows-[auto_1fr]">
       <div className="md:col-span-3 md:row-start-1">
         <TopBar onOpenWizard={() => setWizardOpen(true)} />
@@ -46,6 +50,7 @@ function App() {
         <RightPanel guideSlot={<GuidePanel />} />
       </div>
     </div>
+    </MotionConfig>
   )
 }
 
