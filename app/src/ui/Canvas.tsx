@@ -1,6 +1,14 @@
 import type { NodeTypes } from '@xyflow/react'
-import { Background, BackgroundVariant, ReactFlow, useReactFlow } from '@xyflow/react'
+import {
+  Background,
+  BackgroundVariant,
+  ReactFlow,
+  useEdgesState,
+  useNodesState,
+  useReactFlow,
+} from '@xyflow/react'
 import { useEffect, useMemo } from 'react'
+import type { CockpitEdge, CockpitNode as CockpitRfNode } from '../graph/projection'
 import { project } from '../graph/projection'
 import { useCockpitStore } from '../store'
 import { CockpitNode } from './CockpitNode'
@@ -17,17 +25,29 @@ export function Canvas() {
 
   const { fitView } = useReactFlow()
 
-  const { nodes, edges } = useMemo(() => project(doc, path, lens), [doc, path, lens])
+  const projected = useMemo(() => project(doc, path, lens), [doc, path, lens])
+
+  // Управляемое состояние через useNodesState: React Flow применяет
+  // dimension-изменения через onNodesChange — без этого ноды остаются
+  // visibility:hidden навсегда (reactflow.dev/error#004-смежное поведение).
+  const [nodes, setNodes, onNodesChange] = useNodesState<CockpitRfNode>([])
+  const [edges, setEdges, onEdgesChange] = useEdgesState<CockpitEdge>([])
+
+  useEffect(() => {
+    setNodes(projected.nodes)
+    setEdges(projected.edges)
+  }, [projected, setNodes, setEdges])
 
   useEffect(() => {
     // Погружение/смена линзы — "ощущение погружения" (DESIGN.md).
-    const id = window.requestAnimationFrame(() => {
-      fitView({ duration: 500, padding: 0.15 })
-    })
-    return () => window.cancelAnimationFrame(id)
-  }, [path, lens, fitView])
+    // Небольшая задержка: даём React Flow измерить свежие ноды перед fitView.
+    const id = window.setTimeout(() => {
+      fitView({ duration: 500, padding: 0.15, maxZoom: 1.15 })
+    }, 60)
+    return () => window.clearTimeout(id)
+  }, [projected, fitView])
 
-  if (nodes.length === 0) {
+  if (projected.nodes.length === 0) {
     return <EmptyLevel />
   }
 
@@ -35,11 +55,14 @@ export function Canvas() {
     <ReactFlow
       nodes={nodes}
       edges={edges}
+      onNodesChange={onNodesChange}
+      onEdgesChange={onEdgesChange}
       nodeTypes={nodeTypes}
       nodesDraggable={false}
       nodesConnectable={false}
       zoomOnDoubleClick={false}
       fitView
+      fitViewOptions={{ padding: 0.15, maxZoom: 1.15 }}
       proOptions={{ hideAttribution: true }}
       onNodeClick={(_, node) => select(node.id)}
       onNodeDoubleClick={(_, node) => drillInto(node.id)}

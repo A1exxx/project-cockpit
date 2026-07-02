@@ -32,7 +32,9 @@ export function CockpitNode({ data, selected, id }: NodeProps<CockpitNodeType>) 
   const { mapNode, childCount, lens, index } = data
   const isTodo = mapNode.status === 'todo'
   const isRiskLens = lens === 'risk'
-  const isOrgOutOfFocus = mapNode.kind === 'org'
+  // Приглушаем только контекстные бизнес-блоки без содержимого (Маркетинг/Продажи),
+  // а не всю ветку разработки.
+  const isOrgOutOfFocus = mapNode.kind === 'org' && childCount === 0
 
   const borderClass = selected
     ? 'border-accent ring-2 ring-accent/20'
@@ -49,8 +51,9 @@ export function CockpitNode({ data, selected, id }: NodeProps<CockpitNodeType>) 
       transition={{ type: 'spring', stiffness: 260, damping: 26, delay: index * 0.035 }}
       whileHover={{ scale: 1.01 }}
       whileTap={{ scale: 0.98 }}
+      aria-label={`${mapNode.title} — статус: ${mapNode.status}${childCount > 0 ? `, вложено: ${childCount}` : ''}`}
       className={[
-        'min-w-[150px] rounded-[10px] border p-3',
+        'w-[200px] rounded-[10px] border p-3',
         isRiskLens ? RISK_FILL_BG_CLASS[mapNode.status] : 'bg-surface-2',
         borderClass,
         isTodo ? 'border-dashed' : '',
@@ -65,13 +68,18 @@ export function CockpitNode({ data, selected, id }: NodeProps<CockpitNodeType>) 
           className={`h-[7px] w-[7px] shrink-0 rounded-full ${STATUS_DOT_CLASS[mapNode.status]}`}
           aria-hidden="true"
         />
-        <span className={`text-[13px] font-medium text-ink ${isTodo ? 'text-ink-dim' : ''}`}>
+        <span
+          className={`min-w-0 flex-1 truncate text-[13px] font-medium text-ink ${isTodo ? 'text-ink-dim' : ''}`}
+          title={mapNode.title}
+        >
           {mapNode.title}
         </span>
       </div>
 
       {mapNode.sub ? (
-        <div className="mt-1 pl-[15px] font-mono text-[11px] text-ink-dim">{mapNode.sub}</div>
+        <div className="mt-1 truncate pl-[15px] font-mono text-[11px] text-ink-dim" title={mapNode.sub}>
+          {mapNode.sub}
+        </div>
       ) : null}
 
       {childCount > 0 ? (
