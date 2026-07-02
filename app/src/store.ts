@@ -1,8 +1,8 @@
 import { create } from 'zustand'
-import rawDemoMap from './data/demo-map.json'
+import rawSalesbotMap from './data/salesbot-map.json'
 import type { Lens, MapDoc } from './types'
 
-const demoMap = rawDemoMap as unknown as MapDoc
+const demoMap = rawSalesbotMap as unknown as MapDoc
 
 interface CockpitState {
   doc: MapDoc

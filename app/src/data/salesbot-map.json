@@ -1,0 +1,1844 @@
+{
+  "version": 1,
+  "project": {
+    "name": "Deadline Sales Bot",
+    "desc": "Реальный слепок кода: FastAPI лид-бот — Telegram/Instagram/Messenger, LLM-мозг, CRM, Lead Intelligence (main-репо, состояние 2026-06-01)",
+    "stack": [
+      "FastAPI",
+      "PostgreSQL + pgvector",
+      "Railway",
+      "OpenRouter / Ollama",
+      "HubSpot"
+    ]
+  },
+  "nodes": [
+    {
+      "id": "org-product",
+      "parent": null,
+      "level": 0,
+      "kind": "org",
+      "title": "Продукт / разработка",
+      "sub": "зона кокпита — кликни, чтобы погрузиться",
+      "status": "warn",
+      "meta": {
+        "note": "внутри есть warn-модули и техдолг"
+      }
+    },
+    {
+      "id": "org-marketing",
+      "parent": null,
+      "level": 0,
+      "kind": "org",
+      "title": "Маркетинг",
+      "sub": "контекст — вне разработки",
+      "status": "ok",
+      "meta": {}
+    },
+    {
+      "id": "org-sales",
+      "parent": null,
+      "level": 0,
+      "kind": "org",
+      "title": "Продажи",
+      "sub": "контекст — вне разработки",
+      "status": "ok",
+      "meta": {}
+    },
+    {
+      "id": "sys-backend-core",
+      "parent": "org-product",
+      "level": 1,
+      "kind": "system",
+      "title": "Backend Core (FastAPI)",
+      "sub": "Универсальный /message pipeline: identity→RAG→LLM→handoff→CRM",
+      "status": "ok",
+      "meta": {
+        "path": "main.py",
+        "lines": 2801,
+        "note": ""
+      }
+    },
+    {
+      "id": "sys-channels",
+      "parent": "org-product",
+      "level": 1,
+      "kind": "system",
+      "title": "Каналы доставки",
+      "sub": "Адаптеры Telegram/Instagram/Messenger — webhook→normalized message",
+      "status": "ok",
+      "meta": {
+        "path": "channels/",
+        "note": ""
+      }
+    },
+    {
+      "id": "sys-instagram-module",
+      "parent": "org-product",
+      "level": 1,
+      "kind": "system",
+      "title": "Instagram-модуль (legacy, изолированный)",
+      "sub": "Отдельный approval-flow бот для комментов/DM @deadline.dev",
+      "status": "warn",
+      "meta": {
+        "path": "ig_*.py",
+        "note": "Параллельная, более старая реализация IG рядом с channels/instagram.py — дублирование ответственности (см. МЕТА)"
+      }
+    },
+    {
+      "id": "sys-crm",
+      "parent": "org-product",
+      "level": 1,
+      "kind": "system",
+      "title": "CRM-интеграция",
+      "sub": "Event-queue диспетчер + адаптеры (HubSpot / Bitrix24 / NoOp)",
+      "status": "ok",
+      "meta": {
+        "path": "services/crm/, services/crm_dispatch.py, services/crm_queue.py",
+        "note": ""
+      }
+    },
+    {
+      "id": "sys-db",
+      "parent": "org-product",
+      "level": 1,
+      "kind": "system",
+      "title": "БД-слой (Postgres + pgvector)",
+      "sub": "ORM-модели, identity resolution, векторный поиск по KB",
+      "status": "ok",
+      "meta": {
+        "path": "db/, alembic/",
+        "note": ""
+      }
+    },
+    {
+      "id": "sys-lead-intelligence",
+      "parent": "org-product",
+      "level": 1,
+      "kind": "system",
+      "title": "Lead Intelligence (Sales OS)",
+      "sub": "Скоринг, температура, воронка, эскалации, прогрев, task engine",
+      "status": "ok",
+      "meta": {
+        "path": "services/*.py (кроме crm/identity/conversations)",
+        "note": ""
+      }
+    },
+    {
+      "id": "mod-routes",
+      "parent": "sys-backend-core",
+      "level": 2,
+      "kind": "module",
+      "title": "HTTP Routes",
+      "sub": "/message, /chat, /webhooks/*, /metrics, /lead-submit, /health",
+      "status": "ok",
+      "meta": {
+        "path": "main.py"
+      }
+    },
+    {
+      "id": "mod-handle-message",
+      "parent": "sys-backend-core",
+      "level": 2,
+      "kind": "module",
+      "title": "_handle_message pipeline",
+      "sub": "Единая точка входа для всех каналов — 10-шаговый оркестратор",
+      "status": "ok",
+      "meta": {
+        "path": "main.py"
+      }
+    },
+    {
+      "id": "mod-llm-clients",
+      "parent": "sys-backend-core",
+      "level": 2,
+      "kind": "module",
+      "title": "LLM-клиенты + fallback",
+      "sub": "OpenRouter/Ollama провайдер-селектор, primary+fallback+handoff LLM",
+      "status": "ok",
+      "meta": {
+        "path": "main.py"
+      }
+    },
+    {
+      "id": "mod-reply-guards",
+      "parent": "sys-backend-core",
+      "level": 2,
+      "kind": "module",
+      "title": "Reply Guards (anti-repeat, channel-guard)",
+      "sub": "Код-уровневая защита от повторов и утечки веб-формулировок в мессенджер",
+      "status": "ok",
+      "meta": {
+        "path": "main.py"
+      }
+    },
+    {
+      "id": "mod-telegram-webhook",
+      "parent": "sys-backend-core",
+      "level": 2,
+      "kind": "module",
+      "title": "Telegram webhook fast-200",
+      "sub": "Дедуп + BackgroundThread, защита от OOM при voice-сообщениях",
+      "status": "ok",
+      "meta": {
+        "path": "main.py",
+        "note": "Инцидент 2026-05-20 задокументирован в коде — устранён"
+      }
+    },
+    {
+      "id": "mod-operator-forum",
+      "parent": "sys-backend-core",
+      "level": 2,
+      "kind": "module",
+      "title": "Operator Forum Topics",
+      "sub": "Telegram supergroup: топик на лида, takeover/release кнопки",
+      "status": "ok",
+      "meta": {
+        "path": "main.py"
+      }
+    },
+    {
+      "id": "mod-telegram-channel",
+      "parent": "sys-channels",
+      "level": 2,
+      "kind": "module",
+      "title": "channels/telegram.py",
+      "sub": "Bot API webhook, voice→Groq Whisper, forum-топики",
+      "status": "ok",
+      "meta": {
+        "path": "channels/telegram.py"
+      }
+    },
+    {
+      "id": "mod-instagram-channel",
+      "parent": "sys-channels",
+      "level": 2,
+      "kind": "module",
+      "title": "channels/instagram.py",
+      "sub": "IG DM + comment parsing/reply через Graph API (новый, активный)",
+      "status": "ok",
+      "meta": {
+        "path": "channels/instagram.py"
+      }
+    },
+    {
+      "id": "mod-messenger-channel",
+      "parent": "sys-channels",
+      "level": 2,
+      "kind": "module",
+      "title": "channels/messenger.py",
+      "sub": "FB Messenger DM + Page comment parsing/reply",
+      "status": "ok",
+      "meta": {
+        "path": "channels/messenger.py"
+      }
+    },
+    {
+      "id": "mod-channel-utils",
+      "parent": "sys-channels",
+      "level": 2,
+      "kind": "module",
+      "title": "channels/utils.py",
+      "sub": "Meta HMAC-подпись webhook + 24h proactive-window правило",
+      "status": "ok",
+      "meta": {
+        "path": "channels/utils.py"
+      }
+    },
+    {
+      "id": "mod-ig-legacy-core",
+      "parent": "sys-instagram-module",
+      "level": 2,
+      "kind": "module",
+      "title": "ig_handler.py + ig_routes.py",
+      "sub": "Approval-flow: draft→Telegram approve→post (comments/DM отдельно от /message)",
+      "status": "warn",
+      "meta": {
+        "path": "ig_handler.py, ig_routes.py",
+        "note": "In-memory state (PENDING, sessions) — сбрасывается при рестарте Railway"
+      }
+    },
+    {
+      "id": "mod-ig-legacy-client",
+      "parent": "sys-instagram-module",
+      "level": 2,
+      "kind": "module",
+      "title": "ig_client.py + ig_config.py",
+      "sub": "Graph API клиент (graph.instagram.com) + feature-flag INSTAGRAM_ENABLED",
+      "status": "ok",
+      "meta": {
+        "path": "ig_client.py, ig_config.py"
+      }
+    },
+    {
+      "id": "mod-ig-legacy-prompts",
+      "parent": "sys-instagram-module",
+      "level": 2,
+      "kind": "module",
+      "title": "ig_prompts.py",
+      "sub": "Промпты для коротких публичных ответов на комменты + lead-классификатор",
+      "status": "ok",
+      "meta": {
+        "path": "ig_prompts.py"
+      }
+    },
+    {
+      "id": "mod-crm-adapters",
+      "parent": "sys-crm",
+      "level": 2,
+      "kind": "module",
+      "title": "CRM Adapters",
+      "sub": "Абстрактный CRMAdapter + NoOp/HubSpot/Bitrix24(deferred) реализации",
+      "status": "ok",
+      "meta": {
+        "path": "services/crm/"
+      }
+    },
+    {
+      "id": "mod-crm-dispatch",
+      "parent": "sys-crm",
+      "level": 2,
+      "kind": "module",
+      "title": "CRM Dispatch (hot path)",
+      "sub": "Решает какие CRM-события нужны за этот turn, кладёт в очередь",
+      "status": "ok",
+      "meta": {
+        "path": "services/crm_dispatch.py"
+      }
+    },
+    {
+      "id": "mod-crm-queue",
+      "parent": "sys-crm",
+      "level": 2,
+      "kind": "module",
+      "title": "CRM Event Queue + Worker",
+      "sub": "asyncio.Queue + retry backoff 1/3/10s, lazy-resolve pending id",
+      "status": "ok",
+      "meta": {
+        "path": "services/crm_queue.py"
+      }
+    },
+    {
+      "id": "mod-db-models",
+      "parent": "sys-db",
+      "level": 2,
+      "kind": "module",
+      "title": "ORM-модели",
+      "sub": "Customer, Conversation, Message, KBChunk, TrainingCorrection, ScheduledAction",
+      "status": "ok",
+      "meta": {
+        "path": "db/models.py"
+      }
+    },
+    {
+      "id": "mod-db-connection",
+      "parent": "sys-db",
+      "level": 2,
+      "kind": "module",
+      "title": "Engine + Session management",
+      "sub": "SQLAlchemy sync engine, get_db (FastAPI dep) + session_scope (скрипты)",
+      "status": "ok",
+      "meta": {
+        "path": "db/connection.py"
+      }
+    },
+    {
+      "id": "mod-db-vector",
+      "parent": "sys-db",
+      "level": 2,
+      "kind": "module",
+      "title": "pgvector Similarity Search",
+      "sub": "RAG-поиск по kb_chunks через bge-m3 + cosine distance",
+      "status": "ok",
+      "meta": {
+        "path": "db/vector.py"
+      }
+    },
+    {
+      "id": "feat-vector-similarity-search",
+      "parent": "mod-db-vector",
+      "level": 3,
+      "kind": "feature",
+      "title": "similarity_search / similarity_search_with_score",
+      "sub": "Lazy-singleton embedder, top-k cosine distance по kb_chunks",
+      "status": "ok",
+      "meta": {
+        "path": "db/vector.py",
+        "symbol": "similarity_search"
+      }
+    },
+    {
+      "id": "mod-alembic",
+      "parent": "sys-db",
+      "level": 2,
+      "kind": "module",
+      "title": "Alembic-миграции (7 версий)",
+      "sub": "001 initial → 007 scheduled_actions — эволюция схемы Phase 1→13",
+      "status": "ok",
+      "meta": {
+        "path": "alembic/versions/"
+      }
+    },
+    {
+      "id": "mod-identity",
+      "parent": "sys-db",
+      "level": 2,
+      "kind": "module",
+      "title": "Identity Resolution",
+      "sub": "Кросс-канальный мёрж лида по email/telegram-handle",
+      "status": "ok",
+      "meta": {
+        "path": "services/identity.py"
+      }
+    },
+    {
+      "id": "mod-conversations",
+      "parent": "sys-db",
+      "level": 2,
+      "kind": "module",
+      "title": "Conversation Persistence",
+      "sub": "get_or_create_conversation, append_message, история",
+      "status": "ok",
+      "meta": {
+        "path": "services/conversations.py"
+      }
+    },
+    {
+      "id": "mod-scoring-temp",
+      "parent": "sys-lead-intelligence",
+      "level": 2,
+      "kind": "module",
+      "title": "Lead Scoring + Temperature",
+      "sub": "P1-P6/HardStop, score decay, 6-ступенчатый термометр cold→client",
+      "status": "ok",
+      "meta": {
+        "path": "services/scoring.py, services/temperature.py, services/lead_signals.py"
+      }
+    },
+    {
+      "id": "mod-funnel",
+      "parent": "sys-lead-intelligence",
+      "level": 2,
+      "kind": "module",
+      "title": "Funnel State Machine",
+      "sub": "11 стадий воронки + lost-reasons, forward-only auto-transitions",
+      "status": "ok",
+      "meta": {
+        "path": "services/funnel.py"
+      }
+    },
+    {
+      "id": "mod-escalation",
+      "parent": "sys-lead-intelligence",
+      "level": 2,
+      "kind": "module",
+      "title": "Escalation Triggers",
+      "sub": "7 триггеров (low_confidence, legal_keywords, dialog_loop и др.) + rate-limit",
+      "status": "ok",
+      "meta": {
+        "path": "services/escalation.py, services/triggers.py, services/signal_extraction.py"
+      }
+    },
+    {
+      "id": "mod-warming-pause",
+      "parent": "sys-lead-intelligence",
+      "level": 2,
+      "kind": "module",
+      "title": "Warming + Pause Strategies",
+      "sub": "6 типов пауз + 4 温度-бакета прогрева с cadence",
+      "status": "ok",
+      "meta": {
+        "path": "services/warming.py, services/pause_strategy.py"
+      }
+    },
+    {
+      "id": "mod-returning-lead",
+      "parent": "sys-lead-intelligence",
+      "level": 2,
+      "kind": "module",
+      "title": "Returning Lead Memory (Phase 13)",
+      "sub": "Recall-приветствие + классификатор NEW/CONTINUE для вернувшихся лидов",
+      "status": "ok",
+      "meta": {
+        "path": "services/returning_lead.py"
+      }
+    },
+    {
+      "id": "mod-task-engine",
+      "parent": "sys-lead-intelligence",
+      "level": 2,
+      "kind": "module",
+      "title": "Task Engine (Scheduled Actions)",
+      "sub": "Отложенные действия: бот сам пишет лиду в срок (followup)",
+      "status": "ok",
+      "meta": {
+        "path": "services/scheduled_actions.py, services/followup_parse.py"
+      }
+    },
+    {
+      "id": "mod-cron",
+      "parent": "sys-lead-intelligence",
+      "level": 2,
+      "kind": "module",
+      "title": "Cron Worker",
+      "sub": "Часовой sweep: decay температуры/скора, funnel silence-rule, warming",
+      "status": "ok",
+      "meta": {
+        "path": "services/cron.py"
+      }
+    },
+    {
+      "id": "mod-training",
+      "parent": "sys-lead-intelligence",
+      "level": 2,
+      "kind": "module",
+      "title": "Training / Correction Loop",
+      "sub": "Operator draft→refine→approve, bge-m3 retrieval активных правок в промпт",
+      "status": "ok",
+      "meta": {
+        "path": "services/training.py"
+      }
+    },
+    {
+      "id": "mod-kb-ingest",
+      "parent": "sys-backend-core",
+      "level": 2,
+      "kind": "module",
+      "title": "KB Ingest (Chroma legacy + pgvector)",
+      "sub": "Двойной пайплайн — pgvector активен, Chroma оставлен как backstop",
+      "status": "warn",
+      "meta": {
+        "path": "ingest.py, ingest_pg.py",
+        "note": "README прямо говорит удалить ingest.py после cutover — до сих пор не удалён (техдолг)"
+      }
+    },
+    {
+      "id": "mod-prompts",
+      "parent": "sys-backend-core",
+      "level": 2,
+      "kind": "module",
+      "title": "Prompt Engineering",
+      "sub": "SYSTEM_PROMPT, few-shots, handoff-классификатор, trainer-промпты",
+      "status": "ok",
+      "meta": {
+        "path": "prompts.py"
+      }
+    },
+    {
+      "id": "mod-tenant-loader",
+      "parent": "sys-backend-core",
+      "level": 2,
+      "kind": "module",
+      "title": "Tenant Loader (Multi-tenant config)",
+      "sub": "YAML→Tenant dataclass, .get() nested walker, kb_path resolver",
+      "status": "ok",
+      "meta": {
+        "path": "services/tenant.py"
+      }
+    },
+    {
+      "id": "feat-tenant-dataclass",
+      "parent": "mod-tenant-loader",
+      "level": 3,
+      "kind": "feature",
+      "title": "Tenant dataclass + load_tenant()",
+      "sub": "Fail-loudly загрузчик: config.yaml + system_prompt.md → Tenant",
+      "status": "ok",
+      "meta": {
+        "path": "services/tenant.py",
+        "symbol": "load_tenant"
+      }
+    },
+    {
+      "id": "mod-tenant-config-yaml",
+      "parent": "sys-backend-core",
+      "level": 2,
+      "kind": "module",
+      "title": "deadline-corp/config.yaml",
+      "sub": "11 бизнес-разделов: funnel/scoring/temperature/warming/escalation/discount",
+      "status": "ok",
+      "meta": {
+        "path": "tenants/deadline-corp/config.yaml"
+      }
+    },
+    {
+      "id": "feat-message-req",
+      "parent": "mod-handle-message",
+      "level": 3,
+      "kind": "feature",
+      "title": "MessageRequest / MessageResponse",
+      "sub": "Универсальная Pydantic-схема входа для всех 4 каналов",
+      "status": "ok",
+      "meta": {
+        "path": "main.py",
+        "symbol": "MessageRequest"
+      }
+    },
+    {
+      "id": "feat-recall-branch-a",
+      "parent": "mod-handle-message",
+      "level": 3,
+      "kind": "feature",
+      "title": "Phase 13 Branch A — recall greeting",
+      "sub": "На свежем диалоге вернувшегося лида — LLM-приветствие с саммари прошлого",
+      "status": "ok",
+      "meta": {
+        "path": "main.py",
+        "symbol": "_handle_message (Branch A)"
+      }
+    },
+    {
+      "id": "feat-recall-branch-b",
+      "parent": "mod-handle-message",
+      "level": 3,
+      "kind": "feature",
+      "title": "Phase 13 Branch B — NEW/CONTINUE classify",
+      "sub": "Классификация ответа на recall: новый проект → spawn child conversation",
+      "status": "warn",
+      "meta": {
+        "path": "main.py",
+        "symbol": "_handle_message (Branch B)",
+        "note": "Явно помечено 5 CRITICAL/IMPORTANT FIX комментариями (P13.T15 Bug 1,4,5) — история багов на этом участке"
+      }
+    },
+    {
+      "id": "feat-operator-takeover-check",
+      "parent": "mod-handle-message",
+      "level": 3,
+      "kind": "feature",
+      "title": "Operator Takeover Gate",
+      "sub": "Если оператор перехватил — бот молчит, пустой answer",
+      "status": "ok",
+      "meta": {
+        "path": "main.py"
+      }
+    },
+    {
+      "id": "feat-rag-retrieval",
+      "parent": "mod-handle-message",
+      "level": 3,
+      "kind": "feature",
+      "title": "RAG retrieval (pgvector + corrections)",
+      "sub": "kb_chunks top-4 + training_corrections top-3 (bge-m3 similarity)",
+      "status": "ok",
+      "meta": {
+        "path": "main.py"
+      }
+    },
+    {
+      "id": "feat-handoff-detection",
+      "parent": "mod-handle-message",
+      "level": 3,
+      "kind": "feature",
+      "title": "Handoff Detection + Contact Backstop",
+      "sub": "LLM-классификатор + regex email/tg/phone backstop, gate по валидному контакту",
+      "status": "ok",
+      "meta": {
+        "path": "main.py",
+        "symbol": "check_handoff / _scan_lead_email"
+      }
+    },
+    {
+      "id": "feat-funnel-auto-transition",
+      "parent": "mod-handle-message",
+      "level": 3,
+      "kind": "feature",
+      "title": "Funnel Auto-Transition (per turn)",
+      "sub": "new_lead→in_dialog→qualified внутри hot path, пуш в CRM",
+      "status": "ok",
+      "meta": {
+        "path": "main.py"
+      }
+    },
+    {
+      "id": "feat-tg-voice",
+      "parent": "mod-telegram-channel",
+      "level": 3,
+      "kind": "feature",
+      "title": "Voice Transcription",
+      "sub": "download_voice + Groq Whisper-large-v3, fallback на «напишите текстом»",
+      "status": "ok",
+      "meta": {
+        "path": "channels/telegram.py",
+        "symbol": "transcribe_voice"
+      }
+    },
+    {
+      "id": "feat-tg-forum-topics",
+      "parent": "mod-telegram-channel",
+      "level": 3,
+      "kind": "feature",
+      "title": "Forum Topic Helpers",
+      "sub": "create_forum_topic, send_to_topic, close/reopen — операторский UX",
+      "status": "ok",
+      "meta": {
+        "path": "channels/telegram.py"
+      }
+    },
+    {
+      "id": "feat-tg-parse-webhook",
+      "parent": "mod-telegram-channel",
+      "level": 3,
+      "kind": "feature",
+      "title": "parse_telegram_webhook",
+      "sub": "Update→NormalizedMessage, текст или voice→транскрипт",
+      "status": "ok",
+      "meta": {
+        "path": "channels/telegram.py",
+        "symbol": "parse_telegram_webhook"
+      }
+    },
+    {
+      "id": "feat-ig-dm-parse",
+      "parent": "mod-instagram-channel",
+      "level": 3,
+      "kind": "feature",
+      "title": "parse_instagram_webhook (DM)",
+      "sub": "messaging.message.text → NormalizedMessage, echo-фильтр",
+      "status": "ok",
+      "meta": {
+        "path": "channels/instagram.py",
+        "symbol": "parse_instagram_webhook"
+      }
+    },
+    {
+      "id": "feat-ig-comment-parse",
+      "parent": "mod-instagram-channel",
+      "level": 3,
+      "kind": "feature",
+      "title": "parse_instagram_comment_webhook",
+      "sub": "changes.field=comments → message_type=comment",
+      "status": "ok",
+      "meta": {
+        "path": "channels/instagram.py",
+        "symbol": "parse_instagram_comment_webhook"
+      }
+    },
+    {
+      "id": "feat-ig-send-reply",
+      "parent": "mod-instagram-channel",
+      "level": 3,
+      "kind": "feature",
+      "title": "send_instagram_reply (24h/HUMAN_AGENT)",
+      "sub": "RESPONSE в течение 24ч, MESSAGE_TAG+HUMAN_AGENT для оператора вне окна",
+      "status": "ok",
+      "meta": {
+        "path": "channels/instagram.py",
+        "symbol": "send_instagram_reply"
+      }
+    },
+    {
+      "id": "feat-msgr-dm-parse",
+      "parent": "mod-messenger-channel",
+      "level": 3,
+      "kind": "feature",
+      "title": "parse_messenger_webhook",
+      "sub": "PSID DM parsing, echo/postback/attachment фильтр",
+      "status": "ok",
+      "meta": {
+        "path": "channels/messenger.py",
+        "symbol": "parse_messenger_webhook"
+      }
+    },
+    {
+      "id": "feat-msgr-comment-parse",
+      "parent": "mod-messenger-channel",
+      "level": 3,
+      "kind": "feature",
+      "title": "parse_messenger_comment_webhook",
+      "sub": "FB Page feed comment, фильтр собственных комментов страницы",
+      "status": "ok",
+      "meta": {
+        "path": "channels/messenger.py",
+        "symbol": "parse_messenger_comment_webhook"
+      }
+    },
+    {
+      "id": "feat-hubspot-stages",
+      "parent": "mod-crm-adapters",
+      "level": 3,
+      "kind": "feature",
+      "title": "HubSpot Stage Reconciliation",
+      "sub": "12 стадий (RU labels) auto-create/reconcile в pipeline «Deadline Sales»",
+      "status": "ok",
+      "meta": {
+        "path": "services/crm/hubspot.py",
+        "symbol": "STAGE_DEFS"
+      }
+    },
+    {
+      "id": "feat-hubspot-props",
+      "parent": "mod-crm-adapters",
+      "level": 3,
+      "kind": "feature",
+      "title": "Custom Properties Bootstrap",
+      "sub": "telegram_handle, interaction_type, lead_temperature и др. на Contact/Deal",
+      "status": "ok",
+      "meta": {
+        "path": "services/crm/hubspot.py",
+        "symbol": "CONTACT_PROPERTIES"
+      }
+    },
+    {
+      "id": "feat-crm-factory",
+      "parent": "mod-crm-adapters",
+      "level": 3,
+      "kind": "feature",
+      "title": "build_adapter() Factory",
+      "sub": "crm_enabled+provider→adapter, graceful fallback на NoOp при missing creds",
+      "status": "ok",
+      "meta": {
+        "path": "services/crm/factory.py",
+        "symbol": "build_adapter"
+      }
+    },
+    {
+      "id": "feat-noop-adapter",
+      "parent": "mod-crm-adapters",
+      "level": 3,
+      "kind": "feature",
+      "title": "NoOpAdapter",
+      "sub": "Синтетические id + лог, безопасный дефолт / graceful degradation",
+      "status": "warn",
+      "meta": {
+        "path": "services/crm/noop.py",
+        "symbol": "NoOpAdapter",
+        "note": "Явно задокументированная заглушка — не баг, а осознанный safe default"
+      }
+    },
+    {
+      "id": "feat-bitrix24-deferred",
+      "parent": "mod-crm-adapters",
+      "level": 3,
+      "kind": "feature",
+      "title": "Bitrix24Adapter (не реализован)",
+      "sub": "Ссылается на несуществующий модуль services/crm/bitrix24.py",
+      "status": "todo",
+      "meta": {
+        "path": "services/crm/factory.py",
+        "note": "Phase 3 deferred по решению Nikolay 2026-05-26 — factory ожидает ImportError и фоллбэчит на NoOp"
+      }
+    },
+    {
+      "id": "feat-dispatch-on-turn",
+      "parent": "mod-crm-dispatch",
+      "level": 3,
+      "kind": "feature",
+      "title": "dispatch_on_message_turn",
+      "sub": "Единая точка входа: contact+lazy deal+log+stage+followup за 1 turn",
+      "status": "ok",
+      "meta": {
+        "path": "services/crm_dispatch.py",
+        "symbol": "dispatch_on_message_turn"
+      }
+    },
+    {
+      "id": "feat-lazy-deal",
+      "parent": "mod-crm-dispatch",
+      "level": 3,
+      "kind": "feature",
+      "title": "Lazy Deal Creation",
+      "sub": "Deal только при score>=80 OR handoff OR 3+ сообщений — не на каждое «привет»",
+      "status": "ok",
+      "meta": {
+        "path": "services/crm_dispatch.py",
+        "symbol": "DEAL_CREATION_SCORE_THRESHOLD"
+      }
+    },
+    {
+      "id": "feat-deal-title-builder",
+      "parent": "mod-crm-dispatch",
+      "level": 3,
+      "kind": "feature",
+      "title": "build_qualified_deal_fields",
+      "sub": "handoff_data→читаемый title+структурный бриф карточки сделки",
+      "status": "ok",
+      "meta": {
+        "path": "services/crm_dispatch.py",
+        "symbol": "build_qualified_deal_fields"
+      }
+    },
+    {
+      "id": "feat-test-lead-filter",
+      "parent": "mod-crm-dispatch",
+      "level": 3,
+      "kind": "feature",
+      "title": "Test-Lead Filter (dogfood)",
+      "sub": "email test+persona@... не попадает в прод CRM при дневных прогонах",
+      "status": "ok",
+      "meta": {
+        "path": "services/crm_dispatch.py",
+        "symbol": "_is_test_email"
+      }
+    },
+    {
+      "id": "feat-worker-loop",
+      "parent": "mod-crm-queue",
+      "level": 3,
+      "kind": "feature",
+      "title": "_worker_loop + _dispatch",
+      "sub": "Drain queue, translate event→adapter call, sync DB через to_thread",
+      "status": "ok",
+      "meta": {
+        "path": "services/crm_queue.py",
+        "symbol": "_worker_loop"
+      }
+    },
+    {
+      "id": "feat-pending-resolve",
+      "parent": "mod-crm-queue",
+      "level": 3,
+      "kind": "feature",
+      "title": "Lazy Pending-ID Resolution",
+      "sub": "contact_id/deal_id='pending' → DB-lookup с retry-backoff пока writeback не применился",
+      "status": "ok",
+      "meta": {
+        "path": "services/crm_queue.py",
+        "symbol": "_resolve_pending_contact_id"
+      }
+    },
+    {
+      "id": "feat-retry-backoff",
+      "parent": "mod-crm-queue",
+      "level": 3,
+      "kind": "feature",
+      "title": "Retry Backoff (1/3/10s)",
+      "sub": "3 попытки на transient failure, потом drop с error log",
+      "status": "ok",
+      "meta": {
+        "path": "services/crm_queue.py",
+        "symbol": "_handle_failure"
+      }
+    },
+    {
+      "id": "feat-customer-model",
+      "parent": "mod-db-models",
+      "level": 3,
+      "kind": "feature",
+      "title": "Customer (главный идентификатор)",
+      "sub": "email-anchor, UTM, CRM-ids, Notion §4/5/7 оси (score/temp/interaction_type)",
+      "status": "ok",
+      "meta": {
+        "path": "db/models.py",
+        "symbol": "Customer"
+      }
+    },
+    {
+      "id": "feat-conversation-model",
+      "parent": "mod-db-models",
+      "level": 3,
+      "kind": "feature",
+      "title": "Conversation (+ Phase 13 self-ref)",
+      "sub": "operator_takeover, forum_topic_id, parent_conversation_id (archive/spawn)",
+      "status": "ok",
+      "meta": {
+        "path": "db/models.py",
+        "symbol": "Conversation"
+      }
+    },
+    {
+      "id": "feat-training-correction-model",
+      "parent": "mod-db-models",
+      "level": 3,
+      "kind": "feature",
+      "title": "TrainingCorrection",
+      "sub": "Operator-правки с embedding, soft-delete+superseded_by_id версионирование",
+      "status": "ok",
+      "meta": {
+        "path": "db/models.py",
+        "symbol": "TrainingCorrection"
+      }
+    },
+    {
+      "id": "feat-scheduled-action-model",
+      "parent": "mod-db-models",
+      "level": 3,
+      "kind": "feature",
+      "title": "ScheduledAction (Task Engine)",
+      "sub": "executor=bot|human, due_at, payload — своя очередь отложенных действий",
+      "status": "ok",
+      "meta": {
+        "path": "db/models.py",
+        "symbol": "ScheduledAction"
+      }
+    },
+    {
+      "id": "feat-enum-storage-quirk",
+      "parent": "mod-db-models",
+      "level": 3,
+      "kind": "feature",
+      "title": "Enum Storage Quirk (documented)",
+      "sub": "native_enum=False хранит UPPERCASE в VARCHAR — raw SQL ловушка",
+      "status": "warn",
+      "meta": {
+        "path": "db/models.py",
+        "note": "Задокументированный deferred fix — mixed-format при деплое хуже текущего состояния"
+      }
+    },
+    {
+      "id": "feat-identity-merge",
+      "parent": "mod-identity",
+      "level": 3,
+      "kind": "feature",
+      "title": "update_email (customer merge)",
+      "sub": "Коллизия email → мёрж двух Customer, re-point identities, delete orphan",
+      "status": "ok",
+      "meta": {
+        "path": "services/identity.py",
+        "symbol": "update_email"
+      }
+    },
+    {
+      "id": "feat-resolve-with-meta",
+      "parent": "mod-identity",
+      "level": 3,
+      "kind": "feature",
+      "title": "resolve_or_create_customer_with_meta",
+      "sub": "Возвращает was_returning_match флаг для Phase 13 recall-триггера",
+      "status": "ok",
+      "meta": {
+        "path": "services/identity.py",
+        "symbol": "resolve_or_create_customer_with_meta"
+      }
+    },
+    {
+      "id": "feat-scoring-formula",
+      "parent": "mod-scoring-temp",
+      "level": 3,
+      "kind": "feature",
+      "title": "compute_initial_score / add_message_score",
+      "sub": "(base+content)×source_factor, decay -1/48ч, qualification_threshold=80",
+      "status": "ok",
+      "meta": {
+        "path": "services/scoring.py",
+        "symbol": "compute_initial_score"
+      }
+    },
+    {
+      "id": "feat-temperature-fsm",
+      "parent": "mod-scoring-temp",
+      "level": 3,
+      "kind": "feature",
+      "title": "6-State Temperature FSM",
+      "sub": "cold→warm→hot→ready→client + frozen side-branch, never auto-downgrade",
+      "status": "ok",
+      "meta": {
+        "path": "services/temperature.py",
+        "symbol": "decide_from_tenant_config"
+      }
+    },
+    {
+      "id": "feat-apply-signals",
+      "parent": "mod-scoring-temp",
+      "level": 3,
+      "kind": "feature",
+      "title": "apply_signals_on_turn",
+      "sub": "Единая точка обновления interaction_type/score/temperature за turn",
+      "status": "ok",
+      "meta": {
+        "path": "services/lead_signals.py",
+        "symbol": "apply_signals_on_turn"
+      }
+    },
+    {
+      "id": "feat-funnel-transitions",
+      "parent": "mod-funnel",
+      "level": 3,
+      "kind": "feature",
+      "title": "ALLOWED_AUTO_TRANSITIONS",
+      "sub": "11 стадий, forward-only + lost, backward только через оператора",
+      "status": "ok",
+      "meta": {
+        "path": "services/funnel.py",
+        "symbol": "ALLOWED_AUTO_TRANSITIONS"
+      }
+    },
+    {
+      "id": "feat-escalation-7triggers",
+      "parent": "mod-escalation",
+      "level": 3,
+      "kind": "feature",
+      "title": "7 Escalation Triggers",
+      "sub": "low_confidence, legal_keywords, dialog_loop, explicit_handoff и др.",
+      "status": "ok",
+      "meta": {
+        "path": "services/triggers.py",
+        "symbol": "check_all_triggers"
+      }
+    },
+    {
+      "id": "feat-confidence-heuristic",
+      "parent": "mod-escalation",
+      "level": 3,
+      "kind": "feature",
+      "title": "estimate_bot_confidence (heuristic)",
+      "sub": "Хеджинг-фразы в ответе бота вместо logprobs — ~80% сигнала бесплатно",
+      "status": "ok",
+      "meta": {
+        "path": "services/signal_extraction.py",
+        "symbol": "estimate_bot_confidence"
+      }
+    },
+    {
+      "id": "feat-warming-buckets",
+      "parent": "mod-warming-pause",
+      "level": 3,
+      "kind": "feature",
+      "title": "should_warm_now (4 bucket)",
+      "sub": "hot/warm/cold/frozen — разный cadence и формат прогрева",
+      "status": "ok",
+      "meta": {
+        "path": "services/warming.py",
+        "symbol": "should_warm_now"
+      }
+    },
+    {
+      "id": "feat-pause-6types",
+      "parent": "mod-warming-pause",
+      "level": 3,
+      "kind": "feature",
+      "title": "6 типов пауз (classify_pause)",
+      "sub": "unexplained/busy_later/named_date/awaiting_info/unanswered/operator_pause",
+      "status": "ok",
+      "meta": {
+        "path": "services/pause_strategy.py"
+      }
+    },
+    {
+      "id": "feat-should-trigger-recall",
+      "parent": "mod-returning-lead",
+      "level": 3,
+      "kind": "feature",
+      "title": "should_trigger_recall",
+      "sub": "14+ дней разрыв + 3+ сообщений в прошлом диалоге → триггер recall",
+      "status": "ok",
+      "meta": {
+        "path": "services/returning_lead.py",
+        "symbol": "should_trigger_recall"
+      }
+    },
+    {
+      "id": "feat-write-scheduled",
+      "parent": "mod-task-engine",
+      "level": 3,
+      "kind": "feature",
+      "title": "write_scheduled_action / run_due_followups",
+      "sub": "Бот сам пишет лиду по сроку — только в мессенджерах (есть chat_id)",
+      "status": "ok",
+      "meta": {
+        "path": "services/scheduled_actions.py"
+      }
+    },
+    {
+      "id": "feat-followup-parse",
+      "parent": "mod-task-engine",
+      "level": 3,
+      "kind": "feature",
+      "title": "parse_followup_when",
+      "sub": "«через неделю/в субботу/через 2 минуты» → aware-UTC datetime, TZ+7",
+      "status": "ok",
+      "meta": {
+        "path": "services/followup_parse.py",
+        "symbol": "parse_followup_when"
+      }
+    },
+    {
+      "id": "feat-cron-sweep",
+      "parent": "mod-cron",
+      "level": 3,
+      "kind": "feature",
+      "title": "_worker_loop (hourly sweep)",
+      "sub": "temperature+score decay, funnel silence-rule, warming — max 200/цикл",
+      "status": "ok",
+      "meta": {
+        "path": "services/cron.py"
+      }
+    },
+    {
+      "id": "feat-training-sessions",
+      "parent": "mod-training",
+      "level": 3,
+      "kind": "feature",
+      "title": "TrainingSession (in-memory)",
+      "sub": "draft→refine→approve, TTL 1ч, MAX_SESSIONS=100, без персистентности",
+      "status": "ok",
+      "meta": {
+        "path": "services/training.py",
+        "symbol": "TrainingSession"
+      }
+    },
+    {
+      "id": "feat-ig-approval-pending",
+      "parent": "mod-ig-legacy-core",
+      "level": 3,
+      "kind": "feature",
+      "title": "PENDING approvals dict",
+      "sub": "In-memory очередь approve/skip — сбрасывается при рестарте Railway",
+      "status": "warn",
+      "meta": {
+        "path": "ig_handler.py",
+        "symbol": "PENDING",
+        "note": "Автор сам пометил 'acceptable for MVP' в docstring"
+      }
+    },
+    {
+      "id": "feat-ig-comment-classify",
+      "parent": "mod-ig-legacy-prompts",
+      "level": 3,
+      "kind": "feature",
+      "title": "build_lead_check_prompt / parse_lead_check",
+      "sub": "LLM классифицирует комментарий/DM как потенциального клиента",
+      "status": "ok",
+      "meta": {
+        "path": "ig_prompts.py"
+      }
+    },
+    {
+      "id": "feat-yaml-funnel-section",
+      "parent": "mod-tenant-config-yaml",
+      "level": 3,
+      "kind": "feature",
+      "title": "funnel: 11 stages + lost_reasons",
+      "sub": "new_lead...post_sale + 6 причин отказа, auto_qualify_after=3 сообщения",
+      "status": "ok",
+      "meta": {
+        "path": "tenants/deadline-corp/config.yaml"
+      }
+    },
+    {
+      "id": "feat-yaml-scoring-section",
+      "parent": "mod-tenant-config-yaml",
+      "level": 3,
+      "kind": "feature",
+      "title": "scoring: P1-P6 base + keywords",
+      "sub": "P1=100...P6=10, +20 за «бюджет/дедлайн/срочно», qualification=80",
+      "status": "ok",
+      "meta": {
+        "path": "tenants/deadline-corp/config.yaml"
+      }
+    },
+    {
+      "id": "feat-yaml-discount-section",
+      "parent": "mod-tenant-config-yaml",
+      "level": 3,
+      "kind": "feature",
+      "title": "discount: enabled=false",
+      "sub": "Бот НЕ может давать скидки — фича выключена намеренно",
+      "status": "todo",
+      "meta": {
+        "path": "tenants/deadline-corp/config.yaml",
+        "note": "enabled=false — сконфигурировано, но не активировано в проде"
+      }
+    },
+    {
+      "id": "code-handle-message-fn",
+      "parent": "feat-message-req",
+      "level": 4,
+      "kind": "code",
+      "title": "_handle_message()",
+      "sub": "Главный оркестратор: identity→conv→RAG→LLM→handoff→funnel→CRM commit",
+      "status": "ok",
+      "meta": {
+        "path": "main.py",
+        "symbol": "_handle_message",
+        "lines": 60
+      },
+      "code": "async def _handle_message(req: MessageRequest, db: Session) -> MessageResponse:\n    \"\"\"Pipeline:\n      1. Identity: (channel, external_id, email?) -> Customer (existing or new)\n      2. Conversation: get_or_create_conversation per channel thread\n      3. Persist the user message\n      4. RAG retrieval via pgvector\n      5. Build LLM prompt with DB-stored history (last 12 messages)\n      6. LLM call\n      7. Persist assistant message\n      8. Handoff check + (if real contact) fire brief + mark conversation HANDED_OFF\n      9. Commit transaction once at the end\n    \"\"\"\n    customer, was_returning_match = resolve_or_create_customer_with_meta(\n        db,\n        channel=req.channel,\n        external_id=req.external_id,\n        email=req.email,\n        username=req.username,\n    )\n\n    conv_thread_id = req.channel_conversation_id or req.external_id\n    conversation = get_or_create_conversation(\n        db,\n        customer_id=customer.id,\n        channel=req.channel,\n        channel_conversation_id=conv_thread_id,\n    )\n    # ... forum-topic lazy-create, RAG retrieval, LLM call,\n    # anti-repeat + channel-guard reply guards, handoff detection,\n    # funnel auto-transition, CRM dispatch — see main.py lines 691-1583\n    return MessageResponse(\n        answer=answer,\n        handoff=handoff_triggered,\n        customer_id=str(customer.id),\n        conversation_id=str(conversation.id),\n    )"
+    },
+    {
+      "id": "code-telegram-webhook-fn",
+      "parent": "feat-tg-parse-webhook",
+      "level": 4,
+      "kind": "code",
+      "title": "telegram_webhook() — fast-200",
+      "sub": "HMAC auth fail-closed + dedup + BackgroundThread offload",
+      "status": "ok",
+      "meta": {
+        "path": "main.py",
+        "symbol": "telegram_webhook",
+        "lines": 40
+      },
+      "code": "@app.post(\"/webhooks/telegram\")\nasync def telegram_webhook(request: Request):\n    \"\"\"Telegram Bot API webhook — returns 200 OK in <100ms regardless of\n    payload type. Heavy work runs in a separate OS thread.\"\"\"\n    expected_secret = settings.telegram_webhook_secret\n    if not expected_secret:\n        log.error(\"TELEGRAM_WEBHOOK_SECRET not set — refusing all updates (fail-closed).\")\n        return Response(status_code=503)\n    got_secret = request.headers.get(\"x-telegram-bot-api-secret-token\", \"\")\n    if not hmac.compare_digest(expected_secret.encode(\"utf-8\"), got_secret.encode(\"utf-8\")):\n        log.warning(\"telegram_webhook: secret-token mismatch — rejected forged update\")\n        return Response(status_code=401)\n\n    payload = await request.json()\n    update_id = payload.get(\"update_id\")\n    if _seen_update(update_id):\n        return {\"ok\": True, \"dedup\": True}\n\n    threading.Thread(\n        target=_process_in_thread,\n        args=(payload,),\n        daemon=True,\n        name=f\"tg-update-{update_id}\",\n    ).start()\n    return {\"ok\": True}"
+    },
+    {
+      "id": "code-verify-meta-signature",
+      "parent": "feat-msgr-dm-parse",
+      "level": 4,
+      "kind": "code",
+      "title": "verify_meta_signature()",
+      "sub": "HMAC-SHA256 X-Hub-Signature-256, fail-closed без App Secret",
+      "status": "ok",
+      "meta": {
+        "path": "channels/utils.py",
+        "symbol": "verify_meta_signature",
+        "lines": 25
+      },
+      "code": "def verify_meta_signature(\n    app_secret: Optional[str],\n    signature_header: Optional[str],\n    body: bytes,\n) -> bool:\n    \"\"\"Verify Meta webhook signature (X-Hub-Signature-256).\n    Fails CLOSED: returns True ONLY if a secret is configured AND the\n    signature matches.\"\"\"\n    if not app_secret:\n        log.error(\"META_APP_SECRET not set — rejecting Meta webhook (fail-closed)\")\n        return False\n\n    if not signature_header or not signature_header.startswith(\"sha256=\"):\n        log.warning(f\"meta signature: missing or malformed header — got {signature_header!r}\")\n        return False\n\n    expected = \"sha256=\" + hmac.new(\n        app_secret.encode(\"utf-8\"),\n        msg=body,\n        digestmod=hashlib.sha256,\n    ).hexdigest()\n\n    if not hmac.compare_digest(expected, signature_header):\n        log.warning(\"meta signature mismatch\")\n        return False\n\n    return True"
+    },
+    {
+      "id": "code-update-email-merge",
+      "parent": "feat-identity-merge",
+      "level": 4,
+      "kind": "code",
+      "title": "update_email() — customer merge",
+      "sub": "Release email→UPDATE identities→assign→delete orphan (обходит ORM cascade)",
+      "status": "ok",
+      "meta": {
+        "path": "services/identity.py",
+        "symbol": "update_email",
+        "lines": 45
+      },
+      "code": "def update_email(db: Session, customer_id: UUID, email: str) -> Customer:\n    \"\"\"Set email on a customer. If email already belongs to another customer,\n    MERGE both customers: re-point the other's identities to this one, then\n    delete the orphan customer row.\"\"\"\n    target = db.get(Customer, customer_id)\n    if target is None:\n        raise ValueError(f\"Customer {customer_id} not found\")\n    if target.email == email:\n        return target\n\n    other = db.execute(select(Customer).where(Customer.email == email)).scalar_one_or_none()\n    if other is None:\n        target.email = email\n        db.flush()\n        return target\n    if other.id == target.id:\n        return target\n\n    # (1) re-point identities via raw UPDATE — avoids ORM cascade landmines\n    db.execute(\n        update(ChannelIdentity)\n        .where(ChannelIdentity.customer_id == other.id)\n        .values(customer_id=target.id)\n    )\n    db.expire(other, [\"identities\"])\n    # (2) release email from `other`, (3) assign to `target`\n    other.email = None\n    db.flush()\n    target.email = email\n    db.flush()\n    # (4) delete now-orphaned customer\n    db.delete(other)\n    db.flush()\n    db.expire(target, [\"identities\"])\n    return target"
+    },
+    {
+      "id": "code-compute-initial-score",
+      "parent": "feat-scoring-formula",
+      "level": 4,
+      "kind": "code",
+      "title": "compute_initial_score()",
+      "sub": "(base_by_type + content_keywords) × source_weight = итоговый score",
+      "status": "ok",
+      "meta": {
+        "path": "services/scoring.py",
+        "symbol": "compute_initial_score",
+        "lines": 24
+      },
+      "code": "def compute_initial_score(\n    *,\n    interaction_type: str,\n    channel: str,\n    first_message_text: Optional[str],\n    config_scoring: dict,\n) -> ScoreComponents:\n    \"\"\"Score for a brand-new lead — base from interaction_type, content from first message.\"\"\"\n    base_map = config_scoring.get(\"base_by_interaction_type\", {})\n    keyword_map = config_scoring.get(\"content_keywords\", {})\n    source_weights = config_scoring.get(\"source_weight\", {})\n\n    base = base_score(interaction_type, base_map)\n    content, matched = content_score(first_message_text, keyword_map)\n    factor = source_factor(channel, source_weights)\n    total = int((base + content) * factor)\n    return ScoreComponents(\n        base=base,\n        content=content,\n        source_factor_x10=int(factor * 10),\n        total=total,\n        matched_keywords=matched,\n    )"
+    },
+    {
+      "id": "code-temperature-decide",
+      "parent": "feat-temperature-fsm",
+      "level": 4,
+      "kind": "code",
+      "title": "decide_from_tenant_config()",
+      "sub": "Engagement upgrade всегда побеждает decay в тот же turn",
+      "status": "ok",
+      "meta": {
+        "path": "services/temperature.py",
+        "symbol": "decide_from_tenant_config",
+        "lines": 30
+      },
+      "code": "def decide_from_tenant_config(\n    *,\n    current_temperature: str,\n    content_replies_so_far: int,\n    message_text: Optional[str],\n    silent_days: float,\n    tenant_config: dict,\n) -> str:\n    \"\"\"Composite: apply engagement upgrade first, then decay.\n    Engagement always wins over decay.\"\"\"\n    temp_cfg = (tenant_config or {}).get(\"temperature\", {}) or {}\n\n    upgraded = detect_from_message(\n        current_temperature=current_temperature,\n        content_replies_so_far=content_replies_so_far,\n        message_text=message_text,\n        config_temperature=temp_cfg,\n    )\n    if upgraded != current_temperature:\n        return upgraded\n\n    decay_days = int(temp_cfg.get(\"decay_days\", 14))\n    frozen_after = int(temp_cfg.get(\"frozen_after_days\", 21))\n    return apply_decay(\n        current_temperature=current_temperature,\n        silent_days=silent_days,\n        decay_days=decay_days,\n        frozen_after_days=frozen_after,\n    )"
+    },
+    {
+      "id": "code-dispatch-on-turn-fn",
+      "parent": "feat-dispatch-on-turn",
+      "level": 4,
+      "kind": "code",
+      "title": "dispatch_on_message_turn()",
+      "sub": "Branching: upsert_contact→lazy deal→log×2→stage_change→followup task",
+      "status": "ok",
+      "meta": {
+        "path": "services/crm_dispatch.py",
+        "symbol": "dispatch_on_message_turn",
+        "lines": 55
+      },
+      "code": "def dispatch_on_message_turn(\n    *, customer, conversation, last_lead_message, last_bot_reply,\n    handoff_just_fired, channel, lead_messages_count=0,\n    project_type=None, handoff_data=None,\n) -> None:\n    \"\"\"Process one message turn — enqueue CRM events implied.\n    LAZY DEAL CREATION: deal only fires on real signal (handoff / score>=80\n    / 3+ messages), not on every 'hi'.\"\"\"\n    try:\n        if _is_test_email(getattr(customer, \"email\", None)):\n            return\n        customer_id = str(customer.id)\n        contact_id = customer.crm_contact_id\n        deal_id = conversation.crm_deal_id\n        score = int(getattr(customer, \"lead_score\", 0) or 0)\n\n        if not contact_id:\n            _enqueue_upsert_contact(customer=customer, channel=channel)\n\n        should_create_deal = (not deal_id) and (\n            handoff_just_fired\n            or score >= DEAL_CREATION_SCORE_THRESHOLD\n            or lead_messages_count >= DEAL_CREATION_LEAD_MESSAGES_THRESHOLD\n        )\n        if should_create_deal:\n            _enqueue_create_deal(customer=customer, conversation=conversation,\n                                  first_message_text=last_lead_message,\n                                  channel=channel, project_type=project_type)\n\n        if last_lead_message:\n            dispatch_message_log(customer_id=customer_id, crm_contact_id=contact_id,\n                                  conversation_id=str(conversation.id), role=\"lead\",\n                                  channel=channel, text=last_lead_message)\n        # ... bot reply log, handoff stage_change + operator task,\n        # followup parse + self-schedule — see crm_dispatch.py lines 389-593\n    except Exception as exc:\n        logger.warning(\"[crm_dispatch] dispatch_on_message_turn failed: %s\", exc)"
+    },
+    {
+      "id": "code-worker-dispatch-fn",
+      "parent": "feat-worker-loop",
+      "level": 4,
+      "kind": "code",
+      "title": "_dispatch() — event→adapter translation",
+      "sub": "Lazy pending-id resolve через to_thread, чтобы не блокировать event loop",
+      "status": "ok",
+      "meta": {
+        "path": "services/crm_queue.py",
+        "symbol": "_dispatch",
+        "lines": 35
+      },
+      "code": "async def _dispatch(ev: CRMEvent, adapter: CRMAdapter) -> None:\n    \"\"\"Translate event type -> adapter call. Every sync DB op pushed to\n    a thread via asyncio.to_thread so the event loop stays free\n    (2026-05-29 incident: inline sync DB froze the whole loop under load).\"\"\"\n    p = ev.payload\n    if ev.type == \"upsert_contact\":\n        contact_id = await adapter.upsert_contact(p[\"lead\"])\n        cb = p.get(\"on_contact_id\")\n        if cb is not None:\n            await asyncio.to_thread(cb, contact_id)\n        return\n\n    if ev.type == \"create_deal\":\n        contact_id = p[\"contact_id\"]\n        if contact_id == \"pending\":\n            contact_id = await asyncio.to_thread(_resolve_pending_contact_id, ev.customer_id)\n        deal_id = await adapter.create_deal(p[\"deal\"], contact_id)\n        cb = p.get(\"on_deal_id\")\n        if cb is not None:\n            await asyncio.to_thread(cb, deal_id)\n        return\n    # ... update_deal_stage, update_lead_temperature, log_message,\n    # create_task, schedule_followup — see crm_queue.py lines 254-317"
+    },
+    {
+      "id": "code-resolve-pending-contact",
+      "parent": "feat-pending-resolve",
+      "level": 4,
+      "kind": "code",
+      "title": "_resolve_pending_contact_id()",
+      "sub": "DB-lookup CRM contact_id, raise если writeback ещё не применился (retry)",
+      "status": "ok",
+      "meta": {
+        "path": "services/crm_queue.py",
+        "symbol": "_resolve_pending_contact_id",
+        "lines": 18
+      },
+      "code": "def _resolve_pending_contact_id(customer_id: str) -> str:\n    \"\"\"Look up the real CRM contact_id from DB.\n    Used by events enqueued with contact_id='pending' — the writeback\n    from an earlier upsert_contact event should have populated\n    Customer.crm_contact_id by the time the worker gets here. If not,\n    raise so retry backoff kicks in.\"\"\"\n    from db.connection import session_scope\n    from db.models import Customer\n    from uuid import UUID\n\n    with session_scope() as s:\n        cust = s.query(Customer).filter(Customer.id == UUID(customer_id)).first()\n        if cust and cust.crm_contact_id:\n            return cust.crm_contact_id\n    raise RuntimeError(\n        f\"contact_id still pending for customer {customer_id} — \"\n        f\"writeback from upsert_contact not yet applied\"\n    )"
+    },
+    {
+      "id": "code-customer-model-fields",
+      "parent": "feat-customer-model",
+      "level": 4,
+      "kind": "code",
+      "title": "class Customer(Base)",
+      "sub": "email-anchor UNIQUE, UTM×4, CRM-ids, Notion §4/5/7 оси на одной строке",
+      "status": "ok",
+      "meta": {
+        "path": "db/models.py",
+        "symbol": "Customer",
+        "lines": 45
+      },
+      "code": "class Customer(Base):\n    __tablename__ = \"customers\"\n\n    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)\n    email: Mapped[Optional[str]] = mapped_column(String(320), unique=True, nullable=True, index=True)\n    name: Mapped[Optional[str]] = mapped_column(String(200), nullable=True)\n    phone: Mapped[Optional[str]] = mapped_column(String(50), nullable=True, index=True)\n    first_channel: Mapped[Optional[str]] = mapped_column(SQLEnum(ChannelEnum, native_enum=False), nullable=True)\n\n    utm_source: Mapped[Optional[str]] = mapped_column(String(100), nullable=True)\n    utm_campaign: Mapped[Optional[str]] = mapped_column(String(200), nullable=True)\n    utm_medium: Mapped[Optional[str]] = mapped_column(String(100), nullable=True)\n    utm_content: Mapped[Optional[str]] = mapped_column(String(200), nullable=True)\n\n    profile_data: Mapped[Optional[dict]] = mapped_column(JSONB, nullable=True)\n\n    crm_contact_id: Mapped[Optional[str]] = mapped_column(String(100), nullable=True, index=True)\n    lead_score: Mapped[int] = mapped_column(Integer, nullable=False, server_default=\"0\")\n    lead_temperature: Mapped[str] = mapped_column(String(20), nullable=False, server_default=\"cold\", index=True)\n    interaction_type: Mapped[str] = mapped_column(String(10), nullable=False, server_default=\"P2\")\n    identity_keys: Mapped[Optional[dict]] = mapped_column(JSONB, nullable=True)\n\n    identities: Mapped[list[\"ChannelIdentity\"]] = relationship(\n        back_populates=\"customer\", cascade=\"all, delete-orphan\"\n    )\n    conversations: Mapped[list[\"Conversation\"]] = relationship(\n        back_populates=\"customer\", cascade=\"all, delete-orphan\"\n    )"
+    },
+    {
+      "id": "code-similarity-search-fn",
+      "parent": "feat-vector-similarity-search",
+      "level": 4,
+      "kind": "code",
+      "title": "similarity_search()",
+      "sub": "bge-m3 embed_query → pgvector cosine_distance ORDER BY LIMIT k (HNSW index)",
+      "status": "ok",
+      "meta": {
+        "path": "db/vector.py",
+        "symbol": "similarity_search",
+        "lines": 30
+      },
+      "code": "def similarity_search(query: str, k: int = 4) -> list[Document]:\n    \"\"\"Top-k nearest kb_chunks to `query` via pgvector cosine distance.\"\"\"\n    embedder = _get_embedder()\n    query_vec = embedder.embed_query(query)\n\n    with session_scope() as db:\n        rows = db.execute(\n            select(\n                KBChunk,\n                KBChunk.embedding.cosine_distance(query_vec).label(\"distance\"),\n            )\n            .order_by(KBChunk.embedding.cosine_distance(query_vec))\n            .limit(k)\n        ).all()\n\n        docs = [\n            Document(\n                page_content=row.KBChunk.content,\n                metadata={\n                    \"source\": row.KBChunk.source,\n                    \"chunk_index\": row.KBChunk.chunk_index,\n                    \"distance\": float(row.distance),\n                },\n            )\n            for row in rows\n        ]\n        return docs"
+    },
+    {
+      "id": "code-should-trigger-recall-fn",
+      "parent": "feat-should-trigger-recall",
+      "level": 4,
+      "kind": "code",
+      "title": "should_trigger_recall()",
+      "sub": "SQL join+subquery: prior conv 14д+ назад с 3+ user-сообщениями",
+      "status": "ok",
+      "meta": {
+        "path": "services/returning_lead.py",
+        "symbol": "should_trigger_recall",
+        "lines": 30
+      },
+      "code": "def should_trigger_recall(db: Session, customer_id: UUID) -> bool:\n    \"\"\"Return True iff this customer has at least one prior Conversation\n    where last_message_at is at least RECALL_MIN_GAP_DAYS days in the past\n    AND that Conversation has at least RECALL_MIN_LEAD_MESSAGES messages\n    with role='user'.\"\"\"\n    threshold = datetime.now(timezone.utc) - timedelta(days=RECALL_MIN_GAP_DAYS)\n\n    user_msg_count = (\n        select(Message.conversation_id, func.count().label(\"n\"))\n        .where(Message.role == \"user\")\n        .group_by(Message.conversation_id)\n        .subquery()\n    )\n\n    stmt = (\n        select(Conversation.id)\n        .join(user_msg_count, user_msg_count.c.conversation_id == Conversation.id)\n        .where(\n            Conversation.customer_id == customer_id,\n            Conversation.last_message_at <= threshold,\n            user_msg_count.c.n >= RECALL_MIN_LEAD_MESSAGES,\n        )\n        .limit(1)\n    )\n    row = db.execute(stmt).first()\n    return row is not None"
+    },
+    {
+      "id": "code-parse-followup-when-fn",
+      "parent": "feat-followup-parse",
+      "level": 4,
+      "kind": "code",
+      "title": "parse_followup_when()",
+      "sub": "Regex-парсер «через N мин/час/дней», TZ UTC+7 для дневной гранулярности",
+      "status": "ok",
+      "meta": {
+        "path": "services/followup_parse.py",
+        "symbol": "parse_followup_when",
+        "lines": 20
+      },
+      "code": "def parse_followup_when(text: Optional[str], now: Optional[datetime] = None) -> Optional[datetime]:\n    \"\"\"Вернуть aware-UTC datetime, когда лид просит написать, либо None.\n    Поддержка: «через N минут/часов/дней/недель», «завтра», «послезавтра»,\n    «в <день недели>», «на следующей неделе».\"\"\"\n    if not text:\n        return None\n    now = now or datetime.now(timezone.utc)\n    if now.tzinfo is None:\n        now = now.replace(tzinfo=timezone.utc)\n    t = text.lower().replace(\"ё\", \"е\")\n\n    m = re.search(r\"через\\s+(\\d+)\\s*(минут|мин|час|часа|часов|день|дня|дней|недел)\", t)\n    if m:\n        n = int(m.group(1)); unit = m.group(2)\n        if unit.startswith(\"мин\"):\n            return now + timedelta(minutes=n)\n        if unit.startswith(\"час\"):\n            return now + timedelta(hours=n)\n        # ... день/неделя branches continue below"
+    },
+    {
+      "id": "code-noop-adapter-cls",
+      "parent": "feat-noop-adapter",
+      "level": 4,
+      "kind": "code",
+      "title": "class NoOpAdapter(CRMAdapter)",
+      "sub": "Синтетические noop:<kind>:<uuid> id + info-лог на каждый метод контракта",
+      "status": "warn",
+      "meta": {
+        "path": "services/crm/noop.py",
+        "symbol": "NoOpAdapter",
+        "lines": 20
+      },
+      "code": "class NoOpAdapter(CRMAdapter):\n    provider_name = \"noop\"\n\n    async def upsert_contact(self, lead: Lead) -> str:\n        contact_id = _fake_id(\"contact\")\n        logger.info(\n            \"[noop crm] upsert_contact lead_id=%s channel=%s name=%s -> %s\",\n            lead.id, lead.channel, lead.contact_name, contact_id,\n        )\n        return contact_id\n\n    async def create_deal(self, deal: Deal, contact_id: str) -> str:\n        deal_id = _fake_id(\"deal\")\n        logger.info(\n            \"[noop crm] create_deal conv=%s contact=%s stage=%s title=%r -> %s\",\n            deal.conversation_id, contact_id, deal.stage, deal.title, deal_id,\n        )\n        return deal_id\n\n    async def health_check(self) -> bool:\n        return True"
+    },
+    {
+      "id": "code-tenant-loader-fn",
+      "parent": "feat-tenant-dataclass",
+      "level": 4,
+      "kind": "code",
+      "title": "load_tenant() + Tenant.get()",
+      "sub": "YAML→dataclass, fail loudly при отсутствии config.yaml/system_prompt.md",
+      "status": "ok",
+      "meta": {
+        "path": "services/tenant.py",
+        "symbol": "load_tenant",
+        "lines": 15
+      },
+      "code": "def load_tenant(slug: str, project_root: Optional[Path] = None) -> Tenant:\n    \"\"\"Load a tenant from tenants/<slug>/.\n    Raises FileNotFoundError if the directory, config.yaml, or referenced\n    system_prompt.md is missing — startup fails loudly rather than run\n    with a half-loaded tenant.\"\"\"\n    root = project_root or _PROJECT_ROOT\n    tenant_dir = root / \"tenants\" / slug\n    config_path = tenant_dir / \"config.yaml\"\n    if not config_path.exists():\n        raise FileNotFoundError(f\"Tenant config not found: {config_path}\")\n\n    raw_config = yaml.safe_load(config_path.read_text(encoding=\"utf-8\"))\n    prompt_path = root / raw_config[\"brand\"][\"system_prompt_path\"]\n    system_prompt = prompt_path.read_text(encoding=\"utf-8\")\n\n    return Tenant(\n        slug=raw_config[\"tenant_slug\"],\n        display_name=raw_config[\"display_name\"],\n        languages=raw_config[\"languages\"],\n        system_prompt=system_prompt,\n        raw_config=raw_config,\n    )"
+    }
+  ],
+  "links": [
+    {
+      "from": "sys-channels",
+      "to": "sys-backend-core",
+      "kind": "call",
+      "label": "normalized message"
+    },
+    {
+      "from": "sys-instagram-module",
+      "to": "sys-backend-core",
+      "kind": "event",
+      "label": "approved DM reuses prompts.py"
+    },
+    {
+      "from": "sys-backend-core",
+      "to": "sys-db",
+      "kind": "data",
+      "label": "identity+conversation+message"
+    },
+    {
+      "from": "sys-backend-core",
+      "to": "sys-crm",
+      "kind": "event",
+      "label": "dispatch_on_message_turn"
+    },
+    {
+      "from": "sys-backend-core",
+      "to": "sys-lead-intelligence",
+      "kind": "call",
+      "label": "apply_signals+escalation+funnel"
+    },
+    {
+      "from": "mod-tenant-config-yaml",
+      "to": "mod-scoring-temp",
+      "kind": "data",
+      "label": "scoring/temp config"
+    },
+    {
+      "from": "mod-tenant-loader",
+      "to": "mod-handle-message",
+      "kind": "data",
+      "label": "tenant.system_prompt"
+    },
+    {
+      "from": "sys-crm",
+      "to": "sys-db",
+      "kind": "data",
+      "label": "writeback contact_id/deal_id"
+    },
+    {
+      "from": "sys-lead-intelligence",
+      "to": "sys-crm",
+      "kind": "event",
+      "label": "stage_change/temperature/task"
+    },
+    {
+      "from": "mod-telegram-webhook",
+      "to": "mod-telegram-channel",
+      "kind": "call",
+      "label": "parse_telegram_webhook"
+    },
+    {
+      "from": "mod-telegram-webhook",
+      "to": "mod-handle-message",
+      "kind": "call",
+      "label": "_process_telegram_update"
+    },
+    {
+      "from": "mod-routes",
+      "to": "mod-handle-message",
+      "kind": "call",
+      "label": "/message, /chat, webhooks"
+    },
+    {
+      "from": "mod-handle-message",
+      "to": "mod-identity",
+      "kind": "call",
+      "label": "resolve_or_create_customer"
+    },
+    {
+      "from": "mod-handle-message",
+      "to": "mod-conversations",
+      "kind": "call",
+      "label": "get_or_create_conversation"
+    },
+    {
+      "from": "mod-handle-message",
+      "to": "mod-db-vector",
+      "kind": "call",
+      "label": "pgvector_search"
+    },
+    {
+      "from": "mod-handle-message",
+      "to": "mod-llm-clients",
+      "kind": "call",
+      "label": "call_llm"
+    },
+    {
+      "from": "mod-handle-message",
+      "to": "mod-scoring-temp",
+      "kind": "call",
+      "label": "apply_signals_on_turn"
+    },
+    {
+      "from": "mod-handle-message",
+      "to": "mod-escalation",
+      "kind": "call",
+      "label": "run_escalation_checks"
+    },
+    {
+      "from": "mod-handle-message",
+      "to": "mod-funnel",
+      "kind": "call",
+      "label": "decide_from_tenant_config"
+    },
+    {
+      "from": "mod-handle-message",
+      "to": "mod-crm-dispatch",
+      "kind": "event",
+      "label": "dispatch_on_message_turn"
+    },
+    {
+      "from": "mod-handle-message",
+      "to": "mod-operator-forum",
+      "kind": "call",
+      "label": "send_to_topic mirror"
+    },
+    {
+      "from": "mod-handle-message",
+      "to": "mod-returning-lead",
+      "kind": "call",
+      "label": "should_trigger_recall"
+    },
+    {
+      "from": "mod-handle-message",
+      "to": "mod-prompts",
+      "kind": "call",
+      "label": "build_chat_prompt"
+    },
+    {
+      "from": "mod-instagram-channel",
+      "to": "mod-channel-utils",
+      "kind": "call",
+      "label": "verify_meta_signature"
+    },
+    {
+      "from": "mod-messenger-channel",
+      "to": "mod-channel-utils",
+      "kind": "call",
+      "label": "verify_meta_signature"
+    },
+    {
+      "from": "mod-telegram-channel",
+      "to": "mod-operator-forum",
+      "kind": "call",
+      "label": "create_forum_topic"
+    },
+    {
+      "from": "mod-crm-dispatch",
+      "to": "mod-crm-queue",
+      "kind": "event",
+      "label": "enqueue(CRMEvent)"
+    },
+    {
+      "from": "mod-crm-queue",
+      "to": "mod-crm-adapters",
+      "kind": "call",
+      "label": "adapter.upsert_contact/create_deal"
+    },
+    {
+      "from": "mod-crm-queue",
+      "to": "mod-db-models",
+      "kind": "data",
+      "label": "writeback crm_contact_id/crm_deal_id"
+    },
+    {
+      "from": "mod-cron",
+      "to": "mod-scoring-temp",
+      "kind": "call",
+      "label": "apply_decay (score+temp)"
+    },
+    {
+      "from": "mod-cron",
+      "to": "mod-funnel",
+      "kind": "call",
+      "label": "decide_on_silence"
+    },
+    {
+      "from": "mod-cron",
+      "to": "mod-warming-pause",
+      "kind": "call",
+      "label": "plan_warming"
+    },
+    {
+      "from": "mod-cron",
+      "to": "mod-crm-dispatch",
+      "kind": "event",
+      "label": "dispatch_operator_task"
+    },
+    {
+      "from": "mod-task-engine",
+      "to": "mod-telegram-channel",
+      "kind": "call",
+      "label": "send_telegram_reply (self-followup)"
+    },
+    {
+      "from": "mod-crm-dispatch",
+      "to": "mod-task-engine",
+      "kind": "event",
+      "label": "make_schedule_followup_event"
+    },
+    {
+      "from": "mod-training",
+      "to": "mod-db-vector",
+      "kind": "call",
+      "label": "bge-m3 embed trigger_context"
+    },
+    {
+      "from": "mod-handle-message",
+      "to": "mod-training",
+      "kind": "call",
+      "label": "retrieve_corrections"
+    },
+    {
+      "from": "mod-kb-ingest",
+      "to": "mod-db-vector",
+      "kind": "data",
+      "label": "kb_chunks (ingest_pg.py)"
+    },
+    {
+      "from": "mod-alembic",
+      "to": "mod-db-models",
+      "kind": "data",
+      "label": "schema migrations 001-007"
+    },
+    {
+      "from": "feat-message-req",
+      "to": "feat-identity-merge",
+      "kind": "call",
+      "label": "resolve_or_create_customer_with_meta"
+    },
+    {
+      "from": "feat-handoff-detection",
+      "to": "feat-deal-title-builder",
+      "kind": "data",
+      "label": "handoff_data dict"
+    },
+    {
+      "from": "feat-lazy-deal",
+      "to": "feat-dispatch-on-turn",
+      "kind": "call",
+      "label": "_enqueue_create_deal"
+    },
+    {
+      "from": "feat-worker-loop",
+      "to": "feat-pending-resolve",
+      "kind": "call",
+      "label": "resolve pending id"
+    },
+    {
+      "from": "feat-crm-factory",
+      "to": "feat-noop-adapter",
+      "kind": "call",
+      "label": "fallback when misconfigured"
+    },
+    {
+      "from": "feat-crm-factory",
+      "to": "feat-bitrix24-deferred",
+      "kind": "call",
+      "label": "ImportError fallback"
+    },
+    {
+      "from": "feat-recall-branch-a",
+      "to": "feat-should-trigger-recall",
+      "kind": "call",
+      "label": "gate check"
+    },
+    {
+      "from": "feat-recall-branch-b",
+      "to": "feat-conversation-model",
+      "kind": "data",
+      "label": "spawn child + archive parent"
+    },
+    {
+      "from": "feat-apply-signals",
+      "to": "feat-scoring-formula",
+      "kind": "call",
+      "label": "add_message_score"
+    },
+    {
+      "from": "feat-apply-signals",
+      "to": "feat-temperature-fsm",
+      "kind": "call",
+      "label": "decide_from_tenant_config"
+    },
+    {
+      "from": "feat-escalation-7triggers",
+      "to": "feat-confidence-heuristic",
+      "kind": "call",
+      "label": "estimate_bot_confidence"
+    },
+    {
+      "from": "feat-write-scheduled",
+      "to": "feat-scheduled-action-model",
+      "kind": "data",
+      "label": "ScheduledAction row"
+    },
+    {
+      "from": "feat-followup-parse",
+      "to": "feat-write-scheduled",
+      "kind": "call",
+      "label": "due_at → schedule_followup"
+    },
+    {
+      "from": "feat-yaml-scoring-section",
+      "to": "feat-scoring-formula",
+      "kind": "data",
+      "label": "base_by_interaction_type"
+    },
+    {
+      "from": "feat-yaml-funnel-section",
+      "to": "feat-funnel-transitions",
+      "kind": "data",
+      "label": "stages + lost_reasons"
+    },
+    {
+      "from": "code-handle-message-fn",
+      "to": "code-update-email-merge",
+      "kind": "call",
+      "label": "identity resolve"
+    },
+    {
+      "from": "code-handle-message-fn",
+      "to": "code-similarity-search-fn",
+      "kind": "call",
+      "label": "pgvector_search"
+    },
+    {
+      "from": "code-handle-message-fn",
+      "to": "code-dispatch-on-turn-fn",
+      "kind": "event",
+      "label": "CRM enqueue"
+    },
+    {
+      "from": "code-dispatch-on-turn-fn",
+      "to": "code-worker-dispatch-fn",
+      "kind": "event",
+      "label": "queue.put_nowait"
+    },
+    {
+      "from": "code-worker-dispatch-fn",
+      "to": "code-resolve-pending-contact",
+      "kind": "call",
+      "label": "contact_id=='pending'"
+    },
+    {
+      "from": "code-customer-model-fields",
+      "to": "code-compute-initial-score",
+      "kind": "data",
+      "label": "lead_score column"
+    },
+    {
+      "from": "code-customer-model-fields",
+      "to": "code-temperature-decide",
+      "kind": "data",
+      "label": "lead_temperature column"
+    },
+    {
+      "from": "code-should-trigger-recall-fn",
+      "to": "code-handle-message-fn",
+      "kind": "call",
+      "label": "gates Branch A"
+    },
+    {
+      "from": "code-tenant-loader-fn",
+      "to": "code-handle-message-fn",
+      "kind": "data",
+      "label": "tenant.system_prompt at import time"
+    },
+    {
+      "from": "code-noop-adapter-cls",
+      "to": "code-worker-dispatch-fn",
+      "kind": "call",
+      "label": "adapter methods invoked"
+    }
+  ]
+}
