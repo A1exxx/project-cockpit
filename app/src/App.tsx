@@ -7,6 +7,7 @@ import { LensRail } from './ui/LensRail'
 import { RightPanel } from './ui/RightPanel'
 import { Skeleton } from './ui/Skeleton'
 import { TopBar } from './ui/TopBar'
+import { Wizard } from './wizard/Wizard'
 
 function App() {
   // Эмуляция асинхронной загрузки карты (doc уже в сторе синхронно —
@@ -17,11 +18,15 @@ function App() {
     return () => window.clearTimeout(id)
   }, [])
 
+  const [wizardOpen, setWizardOpen] = useState(false)
+
   return (
     <div className="flex h-full flex-col md:grid md:grid-cols-[auto_1fr_auto] md:grid-rows-[auto_1fr]">
       <div className="md:col-span-3 md:row-start-1">
-        <TopBar />
+        <TopBar onOpenWizard={() => setWizardOpen(true)} />
       </div>
+
+      {wizardOpen ? <Wizard onClose={() => setWizardOpen(false)} /> : null}
 
       <main className="min-w-0 flex-1 bg-bg md:col-start-2 md:row-start-2">
         {ready ? (

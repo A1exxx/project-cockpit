@@ -27,7 +27,7 @@ function transliterate(text: string): string {
 }
 
 /** kebab-slug: транслитерация кириллицы + нормализация в [a-z0-9-]. Пустой вход даёт 'node'. */
-function slugify(text: string): string {
+export function slugify(text: string): string {
   const slug = transliterate(text)
     .replace(/[^a-z0-9]+/g, '-')
     .replace(/-+/g, '-')
