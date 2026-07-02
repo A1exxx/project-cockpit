@@ -3,7 +3,7 @@ import { ReactFlowProvider } from '@xyflow/react'
 import { useEffect, useState } from 'react'
 import { Canvas } from './ui/Canvas'
 import { LensRail } from './ui/LensRail'
-import { NodePanel } from './ui/NodePanel'
+import { RightPanel } from './ui/RightPanel'
 import { Skeleton } from './ui/Skeleton'
 import { TopBar } from './ui/TopBar'
 
@@ -37,7 +37,7 @@ function App() {
       </div>
 
       <div className="hidden md:col-start-3 md:row-start-2 md:block">
-        <NodePanel />
+        <RightPanel />
       </div>
     </div>
   )

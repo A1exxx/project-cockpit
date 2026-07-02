@@ -1,5 +1,6 @@
 import { create } from 'zustand'
 import rawSalesbotMap from './data/salesbot-map.json'
+import { ancestorPath } from './graph/nodeInfo'
 import type { Lens, MapDoc } from './types'
 
 const demoMap = rawSalesbotMap as unknown as MapDoc
@@ -18,6 +19,8 @@ interface CockpitState {
   up: () => void
   setLens: (lens: Lens) => void
   select: (id: string | null) => void
+  /** Прыжок к ноде из панели (связи): переставляет path так, чтобы нода была видима, и выбирает её. */
+  focusNode: (id: string) => void
 }
 
 export const useCockpitStore = create<CockpitState>((set, get) => ({
@@ -45,4 +48,8 @@ export const useCockpitStore = create<CockpitState>((set, get) => ({
 
   setLens: (lens) => set({ lens }),
   select: (id) => set({ selectedId: id }),
+
+  focusNode: (id) => {
+    set({ path: ancestorPath(get().doc, id), selectedId: id })
+  },
 }))
