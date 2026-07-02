@@ -1,0 +1,5 @@
+.claude/worktrees/
+*.local
+.env
+.env.*
+*.tmp.mjs
