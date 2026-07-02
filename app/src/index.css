@@ -1,0 +1,58 @@
+@import '@fontsource-variable/geist';
+@import '@fontsource-variable/geist-mono';
+@import 'tailwindcss';
+
+@theme {
+  --font-sans: 'Geist Variable', ui-sans-serif, system-ui, sans-serif;
+  --font-mono: 'Geist Mono Variable', ui-monospace, 'Cascadia Code', monospace;
+
+  /* Поверхности */
+  --color-bg: #0b0e14;
+  --color-surface: #11151d;
+  --color-surface-2: #161b26;
+  --color-line: #232b3a;
+  --color-line-strong: #33405a;
+
+  /* Текст */
+  --color-ink: #e6eaf2;
+  --color-ink-dim: #8a94a7;
+  --color-ink-faint: #5c6577;
+
+  /* Акцент — один */
+  --color-accent: #67e3f9;
+  --color-accent-dim: #2aa7bf;
+
+  /* Статус-семантика карты (не декор) */
+  --color-ok: #4ade80;
+  --color-warn: #fbbf24;
+  --color-risk: #f87171;
+  --color-todo: #64748b;
+}
+
+html,
+body,
+#root {
+  height: 100%;
+}
+
+body {
+  margin: 0;
+  background: var(--color-bg);
+  color: var(--color-ink);
+  font-family: var(--font-sans);
+  font-size: 14px;
+  line-height: 1.5;
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 100ms !important;
+  }
+}

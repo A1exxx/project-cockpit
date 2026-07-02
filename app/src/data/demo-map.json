@@ -1,0 +1,52 @@
+{
+  "version": 1,
+  "project": {
+    "name": "Deadline Sales Bot",
+    "desc": "Лид-бот: Telegram + Instagram, LLM-мозг, админка (фикстура до реального слепка)",
+    "stack": ["FastAPI", "PostgreSQL", "Railway"]
+  },
+  "nodes": [
+    { "id": "org-product", "parent": null, "level": 0, "kind": "org", "title": "Продукт / разработка", "sub": "зона кокпита", "status": "ok", "meta": {} },
+    { "id": "org-marketing", "parent": null, "level": 0, "kind": "org", "title": "Маркетинг", "sub": "контекст — вне разработки", "status": "ok", "meta": {} },
+    { "id": "org-sales", "parent": null, "level": 0, "kind": "org", "title": "Продажи", "sub": "контекст — вне разработки", "status": "ok", "meta": {} },
+
+    { "id": "sys-backend", "parent": "org-product", "level": 1, "kind": "system", "title": "Backend", "sub": "FastAPI · webhooks", "status": "warn", "meta": { "note": "есть рисковые модули" } },
+    { "id": "sys-admin", "parent": "org-product", "level": 1, "kind": "system", "title": "Admin UI", "sub": "канвас управления", "status": "ok", "meta": {} },
+    { "id": "sys-db", "parent": "org-product", "level": 1, "kind": "system", "title": "PostgreSQL", "sub": "лиды · диалоги · настройки", "status": "ok", "meta": {} },
+    { "id": "sys-telegram", "parent": "org-product", "level": 1, "kind": "system", "title": "Telegram API", "sub": "внешняя интеграция", "status": "ok", "meta": {} },
+    { "id": "sys-instagram", "parent": "org-product", "level": 1, "kind": "system", "title": "Instagram / Meta", "sub": "внешняя интеграция", "status": "warn", "meta": { "note": "rate-limit не обработан" } },
+    { "id": "sys-llm", "parent": "org-product", "level": 1, "kind": "system", "title": "LLM-провайдер", "sub": "внешняя интеграция", "status": "ok", "meta": {} },
+
+    { "id": "mod-core", "parent": "sys-backend", "level": 2, "kind": "module", "title": "Bot Core", "sub": "маршрутизация webhook", "status": "ok", "meta": { "path": "app/core" } },
+    { "id": "mod-instagram", "parent": "sys-backend", "level": 2, "kind": "module", "title": "Instagram-модуль", "sub": "4 фичи · 3 недоработки", "status": "risk", "meta": { "path": "app/ig", "note": "approval-очередь без тестов; ошибки DM глотаются" } },
+    { "id": "mod-brain", "parent": "sys-backend", "level": 2, "kind": "module", "title": "Мозг (LLM)", "sub": "промпты · контекст", "status": "ok", "meta": { "path": "app/brain", "note": "сквозной узел — сюда сходятся 3 связи" } },
+    { "id": "mod-leads", "parent": "sys-backend", "level": 2, "kind": "module", "title": "Лиды", "sub": "пайплайн лидов", "status": "ok", "meta": { "path": "app/leads" } },
+    { "id": "mod-notify", "parent": "sys-backend", "level": 2, "kind": "module", "title": "Уведомления", "sub": "Telegram · без retry", "status": "warn", "meta": { "path": "app/notify", "note": "retry при недоступности TG не настроен" } },
+    { "id": "mod-admin-canvas", "parent": "sys-admin", "level": 2, "kind": "module", "title": "Канвас воронки", "sub": "React Flow", "status": "ok", "meta": { "path": "admin/canvas" } },
+    { "id": "mod-admin-inbox", "parent": "sys-admin", "level": 2, "kind": "module", "title": "Inbox", "sub": "диалоги операторов", "status": "ok", "meta": { "path": "admin/inbox" } },
+
+    { "id": "feat-comment-parser", "parent": "mod-instagram", "level": 3, "kind": "feature", "title": "Парсер комментариев", "sub": "вебхук · ок", "status": "ok", "meta": { "path": "app/ig/comments.py" } },
+    { "id": "feat-dm-dialog", "parent": "mod-instagram", "level": 3, "kind": "feature", "title": "DM-диалог", "sub": "обрыв при таймауте LLM", "status": "warn", "meta": { "path": "app/ig/dm.py", "note": "диалог обрывается при таймауте LLM" } },
+    { "id": "feat-approval-queue", "parent": "mod-instagram", "level": 3, "kind": "feature", "title": "Approval-очередь", "sub": "нет тестов · зависает", "status": "risk", "meta": { "path": "app/ig/approval.py", "note": "нет ни одного теста; зависает при недоступности TG; ручной разбор хвоста" } },
+    { "id": "feat-lead-export", "parent": "mod-instagram", "level": 3, "kind": "feature", "title": "Экспорт в лиды", "sub": "в основной пайплайн", "status": "ok", "meta": { "path": "app/ig/export.py" } },
+    { "id": "feat-crm-export", "parent": "mod-leads", "level": 3, "kind": "feature", "title": "Экспорт в CRM", "sub": "задумано, не сделано", "status": "todo", "meta": { "note": "в бэклоге — пример узла-замысла" } },
+    { "id": "feat-prompt-builder", "parent": "mod-brain", "level": 3, "kind": "feature", "title": "Сборка промпта", "sub": "контекст + история", "status": "ok", "meta": { "path": "app/brain/prompt.py" } },
+
+    { "id": "code-approve-lead", "parent": "feat-approval-queue", "level": 4, "kind": "code", "title": "approve_lead()", "sub": "approval.py · 38 строк", "status": "risk", "meta": { "path": "app/ig/approval.py", "symbol": "approve_lead", "lines": 38, "note": "нет тестов; исключения не логируются" }, "code": "async def approve_lead(lead_id: int, operator_id: int) -> bool:\n    lead = await get_lead(lead_id)\n    if lead is None:\n        return False\n    try:\n        await tg_send(operator_id, render_card(lead))\n    except Exception:\n        pass  # TODO: логировать и ретраить\n    lead.status = 'approved'\n    await save(lead)\n    return True" },
+    { "id": "code-dm-handler", "parent": "feat-dm-dialog", "level": 4, "kind": "code", "title": "handle_dm()", "sub": "dm.py · 52 строки", "status": "warn", "meta": { "path": "app/ig/dm.py", "symbol": "handle_dm", "lines": 52, "note": "таймаут LLM обрывает диалог без сообщения юзеру" }, "code": "async def handle_dm(message: IgMessage) -> None:\n    ctx = await build_context(message.user_id)\n    reply = await llm_complete(ctx, timeout=30)\n    # при таймауте llm_complete кидает — диалог молча обрывается\n    await ig_send(message.user_id, reply)\n    await log_dialog(message, reply)" }
+  ],
+  "links": [
+    { "from": "mod-instagram", "to": "mod-brain", "kind": "call", "label": "DM → ответ LLM" },
+    { "from": "mod-admin-canvas", "to": "mod-brain", "kind": "call", "label": "редактор мозга" },
+    { "from": "mod-instagram", "to": "mod-leads", "kind": "data", "label": "экспорт лида" },
+    { "from": "mod-leads", "to": "sys-db", "kind": "data", "label": "запись лидов" },
+    { "from": "mod-brain", "to": "sys-db", "kind": "data", "label": "контекст диалога" },
+    { "from": "mod-leads", "to": "mod-notify", "kind": "event", "label": "новый лид" },
+    { "from": "mod-notify", "to": "sys-telegram", "kind": "call", "label": "отправка уведомления" },
+    { "from": "mod-core", "to": "sys-telegram", "kind": "call", "label": "webhook-приём" },
+    { "from": "mod-instagram", "to": "sys-instagram", "kind": "call", "label": "Graph API" },
+    { "from": "mod-brain", "to": "sys-llm", "kind": "call", "label": "completion" },
+    { "from": "feat-dm-dialog", "to": "feat-approval-queue", "kind": "event", "label": "лид на одобрение" },
+    { "from": "feat-approval-queue", "to": "feat-lead-export", "kind": "data", "label": "одобренный лид" }
+  ]
+}
