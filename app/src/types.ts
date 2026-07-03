@@ -11,6 +11,8 @@ export interface MapNodeMeta {
   symbol?: string
   lines?: number
   note?: string
+  /** Одна фраза «что это и зачем» человеческим языком (без имён файлов). */
+  plain?: string
 }
 
 export interface MapNode {
@@ -39,6 +41,12 @@ export interface MapDoc {
     name: string
     desc: string
     stack: string[]
+    /** 2-3 фразы простым языком, «объясни другу». */
+    about?: string
+    /** id узла «точка входа / сердце». */
+    entryPointId?: string
+    /** id узлов «начни отсюда» для обзора. */
+    highlights?: string[]
   }
   nodes: MapNode[]
   links: MapLink[]

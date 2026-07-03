@@ -11,6 +11,11 @@ export interface CockpitProject {
   doc: MapDoc
 }
 
+/** Таб правой панели. */
+export type RightTab = 'node' | 'guide'
+/** Режим гида внутри таба «Гид». */
+export type GuideMode = 'tour' | 'ask' | 'task'
+
 interface CockpitState {
   doc: MapDoc
   /** Хлебные крошки: цепочка id фокуса. [] = корень. */
@@ -34,6 +39,16 @@ interface CockpitState {
   switchProject: (id: string) => void
   /** Регистрирует новый проект (черновик мастера) и сразу делает его активным. */
   addProject: (id: string, doc: MapDoc) => void
+
+  // --- ui-срез: управление правой панелью (изолирован от doc/path/lens). ---
+  rightTab: RightTab
+  guideMode: GuideMode
+  /** Счётчик запусков тура — инкремент сигналит GuidePanel сбросить шаг на 0. */
+  tourLaunchNonce: number
+  setRightTab: (tab: RightTab) => void
+  setGuideMode: (mode: GuideMode) => void
+  /** Открывает таб «Гид» в режиме «Экскурсия» и запускает тур с шага 0. */
+  launchTour: () => void
 }
 
 export const useCockpitStore = create<CockpitState>((set, get) => ({
@@ -77,5 +92,20 @@ export const useCockpitStore = create<CockpitState>((set, get) => ({
   addProject: (id, doc) => {
     set((state) => ({ projects: [...state.projects, { id, doc }] }))
     get().switchProject(id)
+  },
+
+  rightTab: 'node',
+  guideMode: 'tour',
+  tourLaunchNonce: 0,
+
+  setRightTab: (tab) => set({ rightTab: tab }),
+  setGuideMode: (mode) => set({ guideMode: mode }),
+
+  launchTour: () => {
+    set((state) => ({
+      rightTab: 'guide',
+      guideMode: 'tour',
+      tourLaunchNonce: state.tourLaunchNonce + 1,
+    }))
   },
 }))
