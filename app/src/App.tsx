@@ -4,6 +4,7 @@ import { MotionConfig } from 'motion/react'
 import { useEffect, useState } from 'react'
 import { GuidePanel } from './guide/GuidePanel'
 import { Canvas } from './ui/Canvas'
+import { CanvasHint } from './ui/CanvasHint'
 import { LensRail } from './ui/LensRail'
 import { RightPanel } from './ui/RightPanel'
 import { Skeleton } from './ui/Skeleton'
@@ -32,7 +33,7 @@ function App() {
 
       {wizardOpen ? <Wizard onClose={() => setWizardOpen(false)} /> : null}
 
-      <main className="min-w-0 flex-1 bg-bg md:col-start-2 md:row-start-2">
+      <main className="relative min-w-0 flex-1 bg-bg md:col-start-2 md:row-start-2">
         {ready ? (
           <ReactFlowProvider>
             <Canvas />
@@ -40,6 +41,7 @@ function App() {
         ) : (
           <Skeleton />
         )}
+        <CanvasHint />
       </main>
 
       <div className="md:col-start-1 md:row-start-2">

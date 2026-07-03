@@ -1,23 +1,11 @@
-import { ArrowLeft, ArrowRight, Cursor } from '@phosphor-icons/react'
+import { ArrowLeft, ArrowRight } from '@phosphor-icons/react'
 import { AnimatePresence, motion } from 'motion/react'
+import { STATUS_DOT_CLASS, STATUS_LABEL } from '../graph/docStats'
 import { breadcrumbTitles, nodeLinks } from '../graph/nodeInfo'
 import { useCockpitStore } from '../store'
 import type { LinkKind, MapNode, NodeKind, NodeStatus } from '../types'
 import { CodeView } from './CodeView'
-
-const STATUS_LABEL: Record<NodeStatus, string> = {
-  ok: 'Стабильно',
-  warn: 'Требует внимания',
-  risk: 'Недоработки',
-  todo: 'Задумано',
-}
-
-const STATUS_DOT_CLASS: Record<NodeStatus, string> = {
-  ok: 'bg-ok',
-  warn: 'bg-warn',
-  risk: 'bg-risk',
-  todo: 'bg-todo',
-}
+import { ProjectOverview } from './ProjectOverview'
 
 const STATUS_CHIP_CLASS: Record<NodeStatus, string> = {
   ok: 'bg-ok/12 text-ok',
@@ -58,10 +46,11 @@ function StatusChip({ status }: { status: NodeStatus }) {
   )
 }
 
-/** Заголовок + статус-чип + подстрока (kind · L{level} · где это). */
+/** Заголовок + статус-чип + подстрока (kind · L{level} · где это) + маркер точки входа (§6.3). */
 function NodeHeader({ node }: { node: MapNode }) {
   const doc = useCockpitStore((s) => s.doc)
   const crumbs = breadcrumbTitles(doc, node.id)
+  const isEntryPoint = doc.project.entryPointId === node.id
 
   return (
     <div className="p-5">
@@ -73,8 +62,16 @@ function NodeHeader({ node }: { node: MapNode }) {
         {KIND_LABEL[node.kind]} · L{node.level}
         {crumbs.length > 0 ? ` · ${crumbs.join(' › ')}` : ''}
       </p>
+      {isEntryPoint ? (
+        <p className="mt-1 font-mono text-[11px] text-accent-dim">точка входа — сюда приходит каждое сообщение</p>
+      ) : null}
     </div>
   )
+}
+
+/** Человеческое объяснение узла (`meta.plain`) — первый содержательный блок после Header (§7.1). */
+function PlainBlock({ plain }: { plain: string }) {
+  return <p className="p-5 text-[13px] text-ink">{plain}</p>
 }
 
 function NoteBlock({ note, status }: { note: string; status: NodeStatus }) {
@@ -160,6 +157,7 @@ function NodeDetails({ node }: { node: MapNode }) {
       className="divide-y divide-line"
     >
       <NodeHeader node={node} />
+      {node.meta?.plain ? <PlainBlock plain={node.meta.plain} /> : null}
       {node.meta?.note ? <NoteBlock note={node.meta.note} status={node.status} /> : null}
       {node.sub ? <p className="p-5 text-[13px] text-ink-dim">{node.sub}</p> : null}
       <LinksBlock node={node} />
@@ -186,15 +184,13 @@ export function NodePanel() {
           <NodeDetails node={selected} />
         ) : (
           <motion.div
-            key="empty"
+            key="overview"
             initial={{ opacity: 0, x: 8 }}
             animate={{ opacity: 1, x: 0 }}
             exit={{ opacity: 0, x: 8 }}
             transition={{ type: 'spring', stiffness: 260, damping: 26 }}
-            className="flex h-full flex-col items-center justify-center gap-3 p-5 text-center text-ink-dim"
           >
-            <Cursor size={24} weight="regular" className="text-ink-faint" />
-            <p className="text-[13px]">Выбери узел на карте</p>
+            <ProjectOverview />
           </motion.div>
         )}
       </AnimatePresence>

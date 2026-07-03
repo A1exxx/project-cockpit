@@ -1,11 +1,9 @@
 import { Compass, Info } from '@phosphor-icons/react'
-import { useState } from 'react'
 import { useCockpitStore } from '../store'
+import type { RightTab } from '../store'
 import { NodePanel } from './NodePanel'
 
-type Tab = 'node' | 'guide'
-
-const TABS: Array<{ id: Tab; label: string; Icon: typeof Info }> = [
+const TABS: Array<{ id: RightTab; label: string; Icon: typeof Info }> = [
   { id: 'node', label: 'Узел', Icon: Info },
   { id: 'guide', label: 'Гид', Icon: Compass },
 ]
@@ -21,7 +19,8 @@ function GuidePlaceholder() {
 
 /** Контейнер правой колонки: табы «Узел» / «Гид» над содержимым. */
 export function RightPanel({ guideSlot }: { guideSlot?: React.ReactNode }) {
-  const [tab, setTab] = useState<Tab>('node')
+  const tab = useCockpitStore((s) => s.rightTab)
+  const setTab = useCockpitStore((s) => s.setRightTab)
   const selectedId = useCockpitStore((s) => s.selectedId)
 
   // Выбор узла на карте не переключает таб автоматически (не дёргаем юзера),

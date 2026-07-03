@@ -9,13 +9,12 @@ import {
   Compass,
 } from '@phosphor-icons/react'
 import { AnimatePresence, motion } from 'motion/react'
-import { useMemo, useRef, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { useCockpitStore } from '../store'
+import type { GuideMode } from '../store'
 import { buildAgentTask } from './agentTask'
 import { applyStepAction, clampStepIndex, createTour, type GuideApi } from './engine'
 import { askGemini, buildMapDigest, clearKey, getKey, setKey, type GeminiErrorKind } from './gemini'
-
-type GuideMode = 'tour' | 'ask' | 'task'
 
 const MODE_TABS: Array<{ id: GuideMode; label: string; Icon: typeof Compass }> = [
   { id: 'tour', label: 'Экскурсия', Icon: Compass },
@@ -37,7 +36,8 @@ const ERROR_MESSAGE: Record<GeminiErrorKind, string> = {
 
 /** Панель-переключатель режимов гида: Экскурсия / Спросить / Задача. */
 export function GuidePanel() {
-  const [mode, setMode] = useState<GuideMode>('tour')
+  const mode = useCockpitStore((s) => s.guideMode)
+  const setMode = useCockpitStore((s) => s.setGuideMode)
 
   return (
     <div className="flex h-full flex-col">
@@ -76,11 +76,18 @@ export function GuidePanel() {
 function TourMode() {
   const steps = useMemo(() => createTour(), [])
   const [stepIndex, setStepIndex] = useState(0)
+  const tourLaunchNonce = useCockpitStore((s) => s.tourLaunchNonce)
 
   const jumpTo = useCockpitStore((s) => s.jumpTo)
   const drillInto = useCockpitStore((s) => s.drillInto)
   const setLens = useCockpitStore((s) => s.setLens)
   const select = useCockpitStore((s) => s.select)
+
+  // Внешний триггер («Экскурсия» в шапке / приглашение в обзоре) инкрементит
+  // nonce — сбрасываем шаг на 0, даже если тур уже был открыт на другом шаге.
+  useEffect(() => {
+    setStepIndex(0)
+  }, [tourLaunchNonce])
 
   const step = steps[stepIndex]
   const isFirst = stepIndex === 0

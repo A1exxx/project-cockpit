@@ -1,6 +1,9 @@
-import { CaretDown, CaretRight, House, Plus } from '@phosphor-icons/react'
+import { CaretDown, CaretRight, Compass, House, Plus } from '@phosphor-icons/react'
 import { useEffect, useRef, useState } from 'react'
+import { directChildCount } from '../graph/docStats'
 import { useCockpitStore } from '../store'
+
+const TOUR_SEEN_KEY = 'cockpit.tourSeen'
 
 /** Дропдаун-свитчер проектов: имя активного проекта становится кнопкой-меню. */
 function ProjectSwitcher() {
@@ -70,9 +73,22 @@ export function TopBar({ onOpenWizard }: { onOpenWizard: () => void }) {
   const doc = useCockpitStore((s) => s.doc)
   const path = useCockpitStore((s) => s.path)
   const jumpTo = useCockpitStore((s) => s.jumpTo)
+  const launchTour = useCockpitStore((s) => s.launchTour)
+
+  const [tourSeen, setTourSeen] = useState(
+    () => window.localStorage.getItem(TOUR_SEEN_KEY) === '1',
+  )
 
   const byId = new Map(doc.nodes.map((n) => [n.id, n]))
   const crumbs = path.map((id) => byId.get(id)).filter((n) => n !== undefined)
+  const lastCrumb = crumbs[crumbs.length - 1]
+  const lastCrumbChildCount = lastCrumb ? directChildCount(doc, lastCrumb.id) : 0
+
+  function handleStartTour() {
+    launchTour()
+    window.localStorage.setItem(TOUR_SEEN_KEY, '1')
+    setTourSeen(true)
+  }
 
   return (
     <header className="z-30 flex h-12 items-center gap-2 border-b border-line bg-surface px-4">
@@ -94,6 +110,7 @@ export function TopBar({ onOpenWizard }: { onOpenWizard: () => void }) {
           return (
             <span key={node.id} className="flex items-center gap-1">
               <CaretRight size={12} weight="regular" className="text-ink-faint" />
+              <span className="text-ink-faint">L{index + 1}</span>
               <button
                 type="button"
                 onClick={() => jumpTo(index)}
@@ -105,6 +122,11 @@ export function TopBar({ onOpenWizard }: { onOpenWizard: () => void }) {
               >
                 {node.title}
               </button>
+              {isLast && lastCrumbChildCount > 0 ? (
+                <span className="rounded-full border border-line px-1.5 py-0.5 text-[11px] text-ink-faint">
+                  {lastCrumbChildCount} внутри
+                </span>
+              ) : null}
             </span>
           )
         })}
@@ -112,8 +134,23 @@ export function TopBar({ onOpenWizard }: { onOpenWizard: () => void }) {
 
       <button
         type="button"
+        onClick={handleStartTour}
+        className="relative ml-auto flex items-center gap-1.5 rounded-lg border border-line px-3 py-1.5 text-[13px] text-ink-dim transition-colors hover:bg-surface-2 hover:text-ink active:scale-[0.98]"
+      >
+        <Compass size={16} weight="regular" />
+        Экскурсия
+        {!tourSeen ? (
+          <span
+            className="h-[6px] w-[6px] rounded-full bg-accent animate-pulse"
+            aria-hidden="true"
+          />
+        ) : null}
+      </button>
+
+      <button
+        type="button"
         onClick={onOpenWizard}
-        className="ml-auto flex items-center gap-1.5 rounded-lg border border-line px-3 py-1.5 text-[13px] text-ink-dim transition-colors hover:bg-surface-2 hover:text-ink active:scale-[0.98]"
+        className="flex items-center gap-1.5 rounded-lg border border-line px-3 py-1.5 text-[13px] text-ink-dim transition-colors hover:bg-surface-2 hover:text-ink active:scale-[0.98]"
       >
         <Plus size={16} weight="regular" />
         Новый проект
