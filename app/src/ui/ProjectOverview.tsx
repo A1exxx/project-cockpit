@@ -8,6 +8,15 @@ import type { NodeStatus } from '../types'
 /** Порядок легенды: Стабильно · Требует внимания · Задумано · Недоработки (см. §6.1). */
 const LEGEND_ORDER: NodeStatus[] = ['ok', 'warn', 'todo', 'risk']
 
+/** Русское склонение по числу: [1, 2-4, 5-0] (напр. модуль/модуля/модулей). */
+function plural(n: number, forms: [string, string, string]): string {
+  const mod10 = n % 10
+  const mod100 = n % 100
+  if (mod10 === 1 && mod100 !== 11) return forms[0]
+  if (mod10 >= 2 && mod10 <= 4 && (mod100 < 12 || mod100 > 14)) return forms[1]
+  return forms[2]
+}
+
 /** Мини-легенда статусов — единственная в приложении (§6.1: либо здесь, либо на канвасе, не оба). */
 function StatusLegend() {
   return (
@@ -62,10 +71,19 @@ export function ProjectOverview() {
       {/* Секция 2 — здоровье проекта */}
       <div className="p-5">
         <h3 className="font-mono text-[11px] uppercase tracking-wide text-ink-faint">Здоровье проекта</h3>
-        <p className="mt-2 font-mono text-[13px] text-ink-dim">
-          <span className="text-ink">{counts.system}</span> систем ·{' '}
-          <span className="text-ink">{counts.module}</span> модулей ·{' '}
-          <span className="text-ink">{counts.feature}</span> фич
+        <p className="mt-2 flex flex-wrap gap-x-1.5 font-mono text-[13px] text-ink-dim">
+          <span>
+            <span className="text-ink">{counts.system}</span>{' '}
+            {plural(counts.system, ['система', 'системы', 'систем'])} ·
+          </span>
+          <span>
+            <span className="text-ink">{counts.module}</span>{' '}
+            {plural(counts.module, ['модуль', 'модуля', 'модулей'])} ·
+          </span>
+          <span>
+            <span className="text-ink">{counts.feature}</span>{' '}
+            {plural(counts.feature, ['фича', 'фичи', 'фич'])}
+          </span>
         </p>
 
         {attention.length > 0 ? (
@@ -81,7 +99,8 @@ export function ProjectOverview() {
               ) : (
                 <CaretRight size={14} weight="regular" className="shrink-0" />
               )}
-              <span className="text-ink">{attention.length}</span> зон внимания
+              <span className="text-ink">{attention.length}</span>{' '}
+              {plural(attention.length, ['зона', 'зоны', 'зон'])} внимания
             </button>
 
             {attentionOpen ? (
