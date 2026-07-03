@@ -1,6 +1,6 @@
 # E2E Scenario Catalog — Project Cockpit
 
-Last updated: 2026-07-02
+Last updated: 2026-07-03
 
 Постоянный контракт: каждый сценарий здесь = один `test()` в соответствующем spec-файле,
 с тем же S-id в названии теста (по-русски). Приложение полностью read-only (демо) —
@@ -17,12 +17,19 @@ Deadline Sales Bot. Стек: Vite + React 19 + TS + Zustand.
 | Area | Spec file | Scenarios | Status |
 |---|---|---|---|
 | Навигация по карте | map-navigation.spec.ts | S-NAV-01..07 | passing |
-| Линзы | lenses.spec.ts | S-LENS-01..04 | passing |
-| Панель узла | node-panel.spec.ts | S-NODE-01..05 | passing |
+| Линзы | lenses.spec.ts | S-LENS-01..05 | passing |
+| Панель узла / обзор проекта | node-panel.spec.ts | S-NODE-01..07 | passing |
 | AI-гид | guide.spec.ts | S-GUIDE-01..05 | passing |
 | Мастер «Новый проект» | wizard.spec.ts | S-WIZ-01..05 | passing |
 
-Итого: 26 сценариев, 0 деструктивных.
+Итого: 29 сценариев, 0 деструктивных.
+
+**Онбординг/ориентация (2026-07-03):** пустое состояние правой панели «Выбери узел
+на карте» заменено обзором проекта (`ProjectOverview.tsx`) — это НАМЕРЕННОЕ изменение
+поведения, см. `DESIGN-ONBOARDING.md`. Обзор виден на холодном старте без выбора узла:
+about-текст, стек, счётчики (системы/модули/фичи), зоны внимания, точка входа, кнопка
+запуска экскурсии. Линзы «Блоки»/«Риск» теперь рисуют временные связи по наведению на
+ноду (§5.1 DESIGN-ONBOARDING) — раньше на этих линзах рёбер не было вовсе.
 
 ---
 
@@ -109,6 +116,13 @@ Deadline Sales Bot. Стек: Vite + React 19 + TS + Zustand.
 - **Spec:** lenses.spec.ts
 - **Destructive:** no
 
+### S-LENS-05: Наведение на ноду в линзе «Блоки» рисует временные связи (DESIGN-ONBOARDING §5.1)
+- **Given** карта внутри «Продукт / разработка» (L1), линза «Блоки», рёбер на канвасе нет
+- **When** курсор наводится на `sys-instagram-module`
+- **Then** появляется хотя бы одно временное ребро (`.react-flow__edge` > 0); при уходе курсора рёбра исчезают
+- **Spec:** lenses.spec.ts
+- **Destructive:** no
+
 ---
 
 ## Панель узла (node-panel.spec.ts)
@@ -145,6 +159,22 @@ Deadline Sales Bot. Стек: Vite + React 19 + TS + Zustand.
 - **Given** карта на L0
 - **When** выбран `org-marketing` (childCount 0)
 - **Then** заголовок и чип видны, но кнопки «Раскрыть ветку» в панели нет
+- **Spec:** node-panel.spec.ts
+- **Destructive:** no
+
+### S-NODE-06: Холодный старт (ничего не выбрано) показывает обзор проекта вместо пустого экрана
+- **Given** свежая загрузка приложения, узел не выбран
+- **When** правая панель рендерится в ветке `selectedId === null`
+- **Then** видна `ProjectOverview`: заголовок «Deadline Sales Bot», текст `project.about`, счётчики
+  («… систем»), кнопка-приглашение «Не знаешь, с чего начать — пройди экскурсию» — это заменяет
+  прежний мёртвый экран «Выбери узел на карте» (DESIGN-ONBOARDING.md §3, намеренное изменение)
+- **Spec:** node-panel.spec.ts
+- **Destructive:** no
+
+### S-NODE-07: Кнопка «Экскурсия» в шапке видна и открывает тур
+- **Given** свежая загрузка приложения
+- **When** клик по кнопке «Экскурсия» в TopBar
+- **Then** правая панель переключается на таб «Гид», режим «Экскурсия», шаг 1/8 (DESIGN-ONBOARDING.md §4.1)
 - **Spec:** node-panel.spec.ts
 - **Destructive:** no
 

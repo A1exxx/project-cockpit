@@ -4,12 +4,14 @@ import { expect, test } from '@playwright/test'
  * S-GUIDE-01..05 — AI-гид (см. SCENARIOS.md).
  * Сегменты гида (Экскурсия/Спросить/Задача) имеют role="tab" — используем
  * button:has-text() вместо getByRole('button'), как указано в паттернах.
+ * Таб «Гид» — exact: true, иначе матчит и кнопку обзора «Спросить AI-гида»
+ * (getByRole matches by substring by default; см. onboarding-обзор §3).
  */
 
 test.beforeEach(async ({ page }) => {
   await page.goto('/')
   await page.waitForSelector('.react-flow__node', { state: 'visible' })
-  await page.getByRole('button', { name: 'Гид' }).click()
+  await page.getByRole('button', { name: 'Гид', exact: true }).click()
   await page.waitForTimeout(300)
 })
 

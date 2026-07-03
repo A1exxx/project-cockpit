@@ -1,6 +1,6 @@
 import { expect, test } from '@playwright/test'
 
-/** S-NODE-01..05 — панель узла (aside), см. SCENARIOS.md. */
+/** S-NODE-01..07 — панель узла (aside), см. SCENARIOS.md. */
 
 test.beforeEach(async ({ page }) => {
   await page.goto('/')
@@ -73,4 +73,23 @@ test('S-NODE-05: узел без детей не показывает кнопк
   const aside = page.locator('aside')
   await expect(aside.getByRole('heading', { name: 'Маркетинг' })).toBeVisible()
   await expect(aside.getByRole('button', { name: /Раскрыть ветку/ })).toHaveCount(0)
+})
+
+test('S-NODE-06: холодный старт (ничего не выбрано) показывает обзор проекта вместо пустого экрана', async ({ page }) => {
+  const aside = page.locator('aside')
+  await expect(aside.getByRole('heading', { name: 'Deadline Sales Bot' })).toBeVisible()
+  await expect(aside.getByText('Бот, который сам ловит клиентов', { exact: false })).toBeVisible()
+  await expect(aside.getByText('систем', { exact: false })).toBeVisible()
+  await expect(aside.getByRole('button', { name: /Не знаешь, с чего начать/ })).toBeVisible()
+})
+
+test('S-NODE-07: кнопка «Экскурсия» видна в шапке и открывает тур', async ({ page }) => {
+  const tourButton = page.getByRole('button', { name: 'Экскурсия' })
+  await expect(tourButton).toBeVisible()
+
+  await tourButton.click()
+  await page.waitForTimeout(300)
+
+  const aside = page.locator('aside')
+  await expect(aside.getByText('Шаг 1 / 8')).toBeVisible()
 })

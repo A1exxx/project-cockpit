@@ -16,6 +16,20 @@ test('S-LENS-01: линза «Блоки» — сеточная раскладк
   await expect(page.locator('.react-flow__edge')).toHaveCount(0)
 })
 
+test('S-LENS-05: наведение на ноду в линзе «Блоки» рисует временные связи (§5.1 DESIGN-ONBOARDING)', async ({ page }) => {
+  await expect(page.locator('.react-flow__edge')).toHaveCount(0)
+
+  await page.locator('.react-flow__node[data-id="sys-instagram-module"]').hover()
+  await page.waitForTimeout(400)
+
+  const edgeCount = await page.locator('.react-flow__edge').count()
+  expect(edgeCount).toBeGreaterThan(0)
+
+  await page.mouse.move(0, 0)
+  await page.waitForTimeout(400)
+  await expect(page.locator('.react-flow__edge')).toHaveCount(0)
+})
+
 test('S-LENS-02: линза «Связи» — сквозные рёбра между нодами', async ({ page }) => {
   await page.getByRole('button', { name: 'Связи' }).click()
   await page.waitForTimeout(900)
