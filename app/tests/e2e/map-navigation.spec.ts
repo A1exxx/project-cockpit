@@ -1,17 +1,13 @@
 import { expect, test } from '@playwright/test'
+import { openSalesbot } from './helpers'
 
 /**
  * S-NAV-01..07 — навигация по карте (см. SCENARIOS.md).
- * Приложение read-only: каждый test() получает свежую page (изоляция стора).
+ * Home — первый экран; каждый test() входит в Sales Bot заново (изоляция стора).
  */
 
-async function waitForMap(page: import('@playwright/test').Page) {
-  await page.waitForSelector('.react-flow__node', { state: 'visible' })
-}
-
 test.beforeEach(async ({ page }) => {
-  await page.goto('/')
-  await waitForMap(page)
+  await openSalesbot(page)
 })
 
 test('S-NAV-01: карта загружается и показывает три бизнес-блока L0', async ({ page }) => {
@@ -63,16 +59,16 @@ test('S-NAV-04: клик по крошке поднимает уровень (ju
   await expect(page.locator('.react-flow__node')).toHaveCount(6)
 })
 
-test('S-NAV-05: кнопка «В корень» сбрасывает путь целиком', async ({ page }) => {
+test('S-NAV-05: L0-крошка сбрасывает путь целиком (заменила кнопку «В корень» в волне 3)', async ({ page }) => {
   await page.locator('.react-flow__node[data-id="org-product"]').dblclick()
   await page.waitForTimeout(900)
   await page.locator('.react-flow__node[data-id="sys-backend-core"]').dblclick()
   await page.waitForTimeout(900)
 
-  await page.getByRole('button', { name: 'В корень' }).click()
+  const crumbNav = page.getByLabel('Хлебные крошки')
+  await crumbNav.getByRole('button', { name: /L0 Deadline Sales Bot/ }).click()
   await page.waitForTimeout(900)
 
-  const crumbNav = page.getByLabel('Хлебные крошки')
   await expect(crumbNav.getByText('Продукт / разработка')).not.toBeVisible()
   await expect(page.locator('.react-flow__node')).toHaveCount(3)
 })

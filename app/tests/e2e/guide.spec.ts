@@ -1,4 +1,5 @@
 import { expect, test } from '@playwright/test'
+import { openSalesbot } from './helpers'
 
 /**
  * S-GUIDE-01..05 — AI-гид (см. SCENARIOS.md).
@@ -9,8 +10,7 @@ import { expect, test } from '@playwright/test'
  */
 
 test.beforeEach(async ({ page }) => {
-  await page.goto('/')
-  await page.waitForSelector('.react-flow__node', { state: 'visible' })
+  await openSalesbot(page)
   await page.getByRole('button', { name: 'Гид', exact: true }).click()
   await page.waitForTimeout(300)
 })

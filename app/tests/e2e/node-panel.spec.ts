@@ -1,10 +1,10 @@
 import { expect, test } from '@playwright/test'
+import { openSalesbot } from './helpers'
 
 /** S-NODE-01..07 — панель узла (aside), см. SCENARIOS.md. */
 
 test.beforeEach(async ({ page }) => {
-  await page.goto('/')
-  await page.waitForSelector('.react-flow__node', { state: 'visible' })
+  await openSalesbot(page)
 })
 
 test('S-NODE-01: клик по ноде показывает заголовок и статус-чип в панели', async ({ page }) => {
