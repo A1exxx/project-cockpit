@@ -1,7 +1,8 @@
 // Ручные позиции нод (драг канваса) — DESIGN-V2.md §4, §6.
-// САМОДОСТАТОЧНЫЙ модуль: свои safe get/set поверх window.localStorage напрямую,
-// НЕ импортирует persistence/storage.ts соседа (владелец storage.ts — волна 3,
-// интегратор объединит позже — см. отчёт волны 2).
+// Использует общие safe-обёртки persistence/storage.ts (единая точка quota-guard
+// и обработки битого JSON) — унификация волны 4, было два параллельных набора обёрток.
+
+import { safeRead, safeWrite } from './storage'
 
 const POSITIONS_KEY = 'cockpit.positions.v1'
 
@@ -29,40 +30,19 @@ function isPositionsRecord(value: unknown): value is PositionsRecord {
 }
 
 function readAll(): PositionsRecord {
-  const raw = window.localStorage.getItem(POSITIONS_KEY)
+  const raw = safeRead<unknown>(POSITIONS_KEY)
   if (raw === null) return {}
-  let parsed: unknown
-  try {
-    parsed = JSON.parse(raw)
-  } catch (err) {
-    console.warn('[positions] битый JSON в cockpit.positions.v1, работаю как с пустым', err)
-    return {}
-  }
-  if (!isPositionsRecord(parsed)) {
+  if (!isPositionsRecord(raw)) {
     console.warn('[positions] неожиданная форма cockpit.positions.v1, работаю как с пустым')
     return {}
   }
-  return parsed
+  return raw
 }
 
-const WRITE_SIZE_GUARD_BYTES = 3_000_000
-
 function writeAll(record: PositionsRecord): void {
-  let serialized: string
-  try {
-    serialized = JSON.stringify(record)
-  } catch (err) {
-    console.warn('[positions] не удалось сериализовать позиции', err)
-    return
-  }
-  if (serialized.length > WRITE_SIZE_GUARD_BYTES) {
-    console.warn('[positions] запись превышает guard, пропущена')
-    return
-  }
-  try {
-    window.localStorage.setItem(POSITIONS_KEY, serialized)
-  } catch (err) {
-    console.warn('[positions] запись в localStorage провалилась (вероятно quota)', err)
+  const result = safeWrite(POSITIONS_KEY, record)
+  if (!result.ok) {
+    console.warn('[positions] запись позиций провалилась:', result.warning)
   }
 }
 
