@@ -1,4 +1,4 @@
-import type { NodeTypes } from '@xyflow/react'
+import type { EdgeTypes, NodeTypes } from '@xyflow/react'
 import {
   Background,
   BackgroundVariant,
@@ -14,22 +14,18 @@ import { useCockpitStore } from '../store'
 import { CanvasOverlay } from './CanvasOverlay'
 import { CockpitNode } from './CockpitNode'
 import { EmptyLevel } from './EmptyLevel'
+import { FloatingEdge } from './FloatingEdge'
 
 const nodeTypes: NodeTypes = { cockpit: CockpitNode }
+const edgeTypes: EdgeTypes = { floating: FloatingEdge }
 
-function rolledToHoverEdge(link: RolledUpLink): CockpitEdge {
+function rolledToHoverEdge(link: RolledUpLink, levelEdgeCount: number): CockpitEdge {
   return {
     id: edgeId(link),
     source: link.from,
     target: link.to,
-    type: 'straight',
-    data: { kind: link.kind, labels: link.labels, count: link.count, active: true },
-    style: {
-      stroke: 'var(--color-accent-dim)',
-      strokeWidth: 1.5,
-      strokeDasharray: '6 4',
-      opacity: 0.6,
-    },
+    type: 'floating',
+    data: { kind: link.kind, labels: link.labels, count: link.count, active: true, levelEdgeCount },
   }
 }
 
@@ -70,6 +66,7 @@ export function Canvas() {
     const activeLinks = visibleRolled.filter((l) => l.from === activeId || l.to === activeId)
     const activeIds = new Set(activeLinks.map(edgeId))
     const projectedIds = new Set(projected.edges.map((e) => e.id))
+    const levelEdgeCount = projected.edges.length
 
     // Линза links: projected.edges уже содержит эти рёбра — декорируем на месте
     // (тот же id, флаги active/passive), а не дублируем вторым ребром поверх.
@@ -79,6 +76,7 @@ export function Canvas() {
         kind: e.data!.kind,
         labels: e.data!.labels,
         count: e.data!.count,
+        levelEdgeCount,
         active: activeIds.has(e.id),
         passive: !activeIds.has(e.id),
       },
@@ -87,7 +85,7 @@ export function Canvas() {
     // формате id (edgeId), поэтому Set исключает случайные повторы.
     const extra = activeLinks
       .filter((l) => !projectedIds.has(edgeId(l)))
-      .map(rolledToHoverEdge)
+      .map((l) => rolledToHoverEdge(l, levelEdgeCount))
     return [...base, ...extra]
   }, [projected.edges, visibleRolled, activeId])
 
@@ -159,6 +157,7 @@ export function Canvas() {
         onNodesChange={onNodesChange}
         onEdgesChange={onEdgesChange}
         nodeTypes={nodeTypes}
+        edgeTypes={edgeTypes}
         nodesDraggable={false}
         nodesConnectable={false}
         zoomOnDoubleClick={false}
