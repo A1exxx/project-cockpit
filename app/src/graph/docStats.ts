@@ -17,6 +17,14 @@ export const STATUS_DOT_CLASS: Record<NodeStatus, string> = {
   todo: 'bg-todo',
 }
 
+/** Хекс статус-токенов DESIGN.md — для SVG-атрибутов (напр. MiniMap nodeColor), где CSS-переменные ненадёжны. */
+export const STATUS_HEX: Record<NodeStatus, string> = {
+  ok: '#4ADE80',
+  warn: '#FBBF24',
+  risk: '#F87171',
+  todo: '#64748B',
+}
+
 export interface KindCounts {
   org: number
   system: number

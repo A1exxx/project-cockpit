@@ -50,10 +50,11 @@ export function CockpitNode({ data, selected, id }: NodeProps<CockpitNodeType>) 
       transition={{ type: 'spring', stiffness: 260, damping: 26, delay: index * 0.035 }}
       whileHover={{ scale: 1.01 }}
       whileTap={{ scale: 0.98 }}
+      whileDrag={{ scale: 1.02, boxShadow: '0 8px 24px rgba(0,0,0,0.35)' }}
       title={titleTooltip}
       aria-label={`${mapNode.title} — статус: ${mapNode.status}${childCount > 0 ? `, вложено: ${childCount}` : ''}`}
       className={[
-        'w-[200px] rounded-[10px] border p-3',
+        'w-[200px] cursor-grab rounded-[10px] border p-3 active:cursor-grabbing',
         isRiskLens ? RISK_FILL_BG_CLASS[mapNode.status] : 'bg-surface-2',
         borderClass,
         isTodo ? 'border-dashed' : '',

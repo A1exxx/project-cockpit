@@ -2,14 +2,17 @@ import type { EdgeTypes, NodeTypes } from '@xyflow/react'
 import {
   Background,
   BackgroundVariant,
+  MiniMap,
   ReactFlow,
   useEdgesState,
   useNodesState,
   useReactFlow,
 } from '@xyflow/react'
 import { useEffect, useMemo, useState } from 'react'
+import { STATUS_HEX } from '../graph/docStats'
 import type { CockpitEdge, CockpitNode as CockpitRfNode, RolledUpLink } from '../graph/projection'
 import { edgeId, project, rollupLinks } from '../graph/projection'
+import { clearPositions, loadPositions, savePosition } from '../persistence/positions'
 import { useCockpitStore } from '../store'
 import { CanvasOverlay } from './CanvasOverlay'
 import { CockpitNode } from './CockpitNode'
@@ -18,6 +21,9 @@ import { FloatingEdge } from './FloatingEdge'
 
 const nodeTypes: NodeTypes = { cockpit: CockpitNode }
 const edgeTypes: EdgeTypes = { floating: FloatingEdge }
+
+/** Порог видимых нод уровня, начиная с которого показываем миникарту (DESIGN-V2.md §7). */
+const MINIMAP_NODE_THRESHOLD = 12
 
 function rolledToHoverEdge(link: RolledUpLink, levelEdgeCount: number): CockpitEdge {
   return {
@@ -36,13 +42,26 @@ export function Canvas() {
   const selectedId = useCockpitStore((s) => s.selectedId)
   const select = useCockpitStore((s) => s.select)
   const drillInto = useCockpitStore((s) => s.drillInto)
+  const activeProjectId = useCockpitStore((s) => s.activeProjectId)
 
   const { fitView } = useReactFlow()
 
   // Чисто визуальный hover-стейт канваса — не в глобальном сторе (DESIGN-ONBOARDING §5.1).
   const [hoveredId, setHoveredId] = useState<string | null>(null)
 
-  const projected = useMemo(() => project(doc, path, lens), [doc, path, lens])
+  const focusId = path.length > 0 ? path[path.length - 1] : null
+
+  // Снапшот оверрайдов позиций читается из localStorage один раз на вход в уровень
+  // (deps: тройка проект/фокус/линза + layoutNonce) — НЕ реактивен к записям dragStop,
+  // иначе каждый drag-stop пересобрал бы projected целиком (DESIGN-V2.md §6).
+  const [layoutNonce, setLayoutNonce] = useState(0)
+  const overrides = useMemo(
+    () => loadPositions(activeProjectId, focusId, lens),
+    [activeProjectId, focusId, lens, layoutNonce],
+  )
+  const hasOverrides = Object.keys(overrides).length > 0
+
+  const projected = useMemo(() => project(doc, path, lens, overrides), [doc, path, lens, overrides])
 
   // Мемо rollup рёбер видимого уровня — фильтруется по hover/select дёшево,
   // а не пересчитывается на каждый mousemove (DESIGN-ONBOARDING §5.1).
@@ -144,13 +163,22 @@ export function Canvas() {
     setHoveredId(null)
   }, [doc, path, lens])
 
+  // «Разложить заново»: стирает сохранённые оверрайды текущей тройки и триггерит
+  // перечитывание оверрайдов (пустых) → авто-layout. fitView срабатывает сам через
+  // существующий эффект (projected меняется). Стаггер входа при этом — ожидаемое
+  // «пересобрал уровень», не путать с драг-стопом (там ремаунта нет).
+  const handleRelayout = () => {
+    clearPositions(activeProjectId, focusId, lens)
+    setLayoutNonce((n) => n + 1)
+  }
+
   if (projected.nodes.length === 0) {
     return <EmptyLevel />
   }
 
   return (
     <div className="relative h-full w-full">
-      <CanvasOverlay lens={lens} />
+      <CanvasOverlay lens={lens} hasOverrides={hasOverrides} onRelayout={handleRelayout} />
       <ReactFlow
         nodes={nodes}
         edges={edges}
@@ -158,7 +186,7 @@ export function Canvas() {
         onEdgesChange={onEdgesChange}
         nodeTypes={nodeTypes}
         edgeTypes={edgeTypes}
-        nodesDraggable={false}
+        nodesDraggable
         nodesConnectable={false}
         zoomOnDoubleClick={false}
         fitView
@@ -168,6 +196,7 @@ export function Canvas() {
         onNodeDoubleClick={(_, node) => drillInto(node.id)}
         onNodeMouseEnter={(_, node) => setHoveredId(node.id)}
         onNodeMouseLeave={() => setHoveredId(null)}
+        onNodeDragStop={(_, node) => savePosition(activeProjectId, focusId, lens, node.id, node.position)}
       >
         <Background
           variant={BackgroundVariant.Dots}
@@ -176,6 +205,17 @@ export function Canvas() {
           color="var(--color-line)"
           style={{ opacity: 0.4 }}
         />
+        {projected.nodes.length > MINIMAP_NODE_THRESHOLD ? (
+          <MiniMap
+            position="bottom-right"
+            pannable
+            zoomable
+            nodeColor={(n) => STATUS_HEX[(n as CockpitRfNode).data.mapNode.status]}
+            maskColor="rgba(11,14,20,0.8)"
+            bgColor="var(--color-surface)"
+            style={{ border: '1px solid var(--color-line)', borderRadius: 10 }}
+          />
+        ) : null}
       </ReactFlow>
     </div>
   )
