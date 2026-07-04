@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import type { MapDoc } from '../types'
-import { childrenOf, project, rollupLinks } from './projection'
+import { childrenOf, edgeId, project, rollupLinks } from './projection'
 
 // Фикстура-двойник demo-map.json: L0 (parent=null) → L1 → L2 → L3, плюс
 // пара глубоких связей, чтобы rollupLinks было что поднимать.
@@ -132,6 +132,36 @@ describe('project', () => {
     const doc = makeDoc()
     const { edges } = project(doc, [], 'blocks')
     expect(edges).toHaveLength(0)
+  })
+
+  it('на линзе links при активном узле нет двух рёбер с одинаковой парой from/to/kind (фикс дублей)', () => {
+    const doc = makeDoc()
+    // Фокус=org-a: видимы sys-1/sys-2 — то же место, где Canvas.tsx декорирует hover/select.
+    const { edges } = project(doc, ['org-a'], 'links')
+    const rolled = rollupLinks(doc, new Set(['sys-1', 'sys-2']))
+
+    // Симулируем decoratedEdges Canvas.tsx: activeId = 'sys-1' наводит/выделяет рёбра,
+    // инцидентные ей — точно так же, как реальный hover-путь.
+    const activeLinks = rolled.filter((l) => l.from === 'sys-1' || l.to === 'sys-1')
+    const projectedIds = new Set(edges.map((e) => e.id))
+    const base = edges.map((e) => ({ ...e }))
+    const extra = activeLinks.filter((l) => !projectedIds.has(edgeId(l)))
+    const decorated = [...base, ...extra.map((l) => ({ id: edgeId(l) }))]
+
+    // Ключевая проверка бага: id базового ребра (rolledToRfEdge) и id hover-декорации
+    // (edgeId по тому же линку) должны совпадать — иначе получаем дубль.
+    const idsByPair = new Map<string, number>()
+    for (const e of decorated) {
+      idsByPair.set(e.id, (idsByPair.get(e.id) ?? 0) + 1)
+    }
+    for (const count of idsByPair.values()) {
+      expect(count).toBe(1)
+    }
+    // edgeId() детерминирован и одинаков для обоих путей построения id.
+    for (const link of activeLinks) {
+      const matchingBaseEdge = edges.find((e) => e.source === link.from && e.target === link.to && e.data?.kind === link.kind)
+      expect(matchingBaseEdge?.id).toBe(edgeId(link))
+    }
   })
 
   it('в линзе tree с фокусом содержит фокус-ноду, её детей и рёбра фокус->ребёнок', () => {

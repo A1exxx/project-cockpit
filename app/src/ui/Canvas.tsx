@@ -9,7 +9,7 @@ import {
 } from '@xyflow/react'
 import { useEffect, useMemo, useState } from 'react'
 import type { CockpitEdge, CockpitNode as CockpitRfNode, RolledUpLink } from '../graph/projection'
-import { project, rollupLinks } from '../graph/projection'
+import { edgeId, project, rollupLinks } from '../graph/projection'
 import { useCockpitStore } from '../store'
 import { CanvasOverlay } from './CanvasOverlay'
 import { CockpitNode } from './CockpitNode'
@@ -19,11 +19,11 @@ const nodeTypes: NodeTypes = { cockpit: CockpitNode }
 
 function rolledToHoverEdge(link: RolledUpLink): CockpitEdge {
   return {
-    id: `hover:${link.from}->${link.to}:${link.kind}`,
+    id: edgeId(link),
     source: link.from,
     target: link.to,
     type: 'straight',
-    data: { kind: link.kind, labels: link.labels, count: link.count },
+    data: { kind: link.kind, labels: link.labels, count: link.count, active: true },
     style: {
       stroke: 'var(--color-accent-dim)',
       strokeWidth: 1.5,
@@ -68,9 +68,27 @@ export function Canvas() {
     if (activeId === null) return projected.edges
 
     const activeLinks = visibleRolled.filter((l) => l.from === activeId || l.to === activeId)
-    const extraEdgeIds = new Set(activeLinks.map((l) => `hover:${l.from}->${l.to}:${l.kind}`))
-    const baseEdges = projected.edges.filter((e) => !extraEdgeIds.has(e.id))
-    return [...baseEdges, ...activeLinks.map(rolledToHoverEdge)]
+    const activeIds = new Set(activeLinks.map(edgeId))
+    const projectedIds = new Set(projected.edges.map((e) => e.id))
+
+    // Линза links: projected.edges уже содержит эти рёбра — декорируем на месте
+    // (тот же id, флаги active/passive), а не дублируем вторым ребром поверх.
+    const base: CockpitEdge[] = projected.edges.map((e) => ({
+      ...e,
+      data: {
+        kind: e.data!.kind,
+        labels: e.data!.labels,
+        count: e.data!.count,
+        active: activeIds.has(e.id),
+        passive: !activeIds.has(e.id),
+      },
+    }))
+    // Линзы blocks/risk: projected.edges пуст — hover-рёбра аддитивны, но в том же
+    // формате id (edgeId), поэтому Set исключает случайные повторы.
+    const extra = activeLinks
+      .filter((l) => !projectedIds.has(edgeId(l)))
+      .map(rolledToHoverEdge)
+    return [...base, ...extra]
   }, [projected.edges, visibleRolled, activeId])
 
   const dimmedIds = useMemo(() => {
