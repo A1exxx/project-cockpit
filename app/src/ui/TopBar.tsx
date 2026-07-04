@@ -74,6 +74,8 @@ export function TopBar({ onOpenWizard }: { onOpenWizard: () => void }) {
   const path = useCockpitStore((s) => s.path)
   const jumpTo = useCockpitStore((s) => s.jumpTo)
   const launchTour = useCockpitStore((s) => s.launchTour)
+  const view = useCockpitStore((s) => s.view)
+  const goHome = useCockpitStore((s) => s.goHome)
 
   const [tourSeen, setTourSeen] = useState(
     () => window.localStorage.getItem(TOUR_SEEN_KEY) === '1',
@@ -83,6 +85,7 @@ export function TopBar({ onOpenWizard }: { onOpenWizard: () => void }) {
   const crumbs = path.map((id) => byId.get(id)).filter((n) => n !== undefined)
   const lastCrumb = crumbs[crumbs.length - 1]
   const lastCrumbChildCount = lastCrumb ? directChildCount(doc, lastCrumb.id) : 0
+  const atRoot = path.length === 0
 
   function handleStartTour() {
     launchTour()
@@ -90,21 +93,53 @@ export function TopBar({ onOpenWizard }: { onOpenWizard: () => void }) {
     setTourSeen(true)
   }
 
+  if (view === 'home') {
+    return (
+      <header className="z-30 flex h-12 items-center gap-2 border-b border-line bg-surface px-4">
+        <button
+          type="button"
+          onClick={goHome}
+          aria-label="Ко всем проектам"
+          title="Ко всем проектам"
+          className="flex h-7 w-7 items-center justify-center rounded-lg text-ink-dim transition-colors hover:bg-surface-2 hover:text-ink active:scale-[0.98]"
+        >
+          <House size={16} weight="regular" />
+        </button>
+        <span className="text-[15px] font-medium tracking-tight text-ink">Project Cockpit</span>
+        <button
+          type="button"
+          onClick={onOpenWizard}
+          className="ml-auto flex items-center gap-1.5 rounded-lg border border-line px-3 py-1.5 text-[13px] text-ink-dim transition-colors hover:bg-surface-2 hover:text-ink active:scale-[0.98]"
+        >
+          <Plus size={16} weight="regular" />
+          Новый проект
+        </button>
+      </header>
+    )
+  }
+
   return (
     <header className="z-30 flex h-12 items-center gap-2 border-b border-line bg-surface px-4">
-      <ProjectSwitcher />
-
       <button
         type="button"
-        onClick={() => jumpTo(-1)}
-        aria-label="В корень"
-        title="В корень"
-        className="ml-3 flex h-7 w-7 items-center justify-center rounded-lg text-ink-dim transition-colors hover:bg-surface-2 hover:text-ink active:scale-[0.98]"
+        onClick={goHome}
+        aria-label="Ко всем проектам"
+        title="Ко всем проектам"
+        className="flex h-7 w-7 items-center justify-center rounded-lg text-ink-dim transition-colors hover:bg-surface-2 hover:text-ink active:scale-[0.98]"
       >
         <House size={16} weight="regular" />
       </button>
 
+      <ProjectSwitcher />
+
       <nav className="flex items-center gap-1 font-mono text-[13px]" aria-label="Хлебные крошки">
+        <button
+          type="button"
+          onClick={() => jumpTo(-1)}
+          className={`max-w-[20ch] truncate ${atRoot ? 'text-accent' : 'text-ink-dim transition-colors hover:text-ink'}`}
+        >
+          <span className="text-ink-faint">L0</span> {doc.project.name}
+        </button>
         {crumbs.map((node, index) => {
           const isLast = index === crumbs.length - 1
           return (

@@ -3,8 +3,10 @@ import { ReactFlowProvider } from '@xyflow/react'
 import { MotionConfig } from 'motion/react'
 import { useEffect, useState } from 'react'
 import { GuidePanel } from './guide/GuidePanel'
+import { useCockpitStore } from './store'
 import { Canvas } from './ui/Canvas'
 import { CanvasHint } from './ui/CanvasHint'
+import { Home } from './ui/Home'
 import { LensRail } from './ui/LensRail'
 import { RightPanel } from './ui/RightPanel'
 import { Skeleton } from './ui/Skeleton'
@@ -21,6 +23,7 @@ function App() {
   }, [])
 
   const [wizardOpen, setWizardOpen] = useState(false)
+  const view = useCockpitStore((s) => s.view)
 
   return (
     // reducedMotion="user": JS-пружины motion уважают prefers-reduced-motion
@@ -33,24 +36,32 @@ function App() {
 
       {wizardOpen ? <Wizard onClose={() => setWizardOpen(false)} /> : null}
 
-      <main className="relative min-w-0 flex-1 bg-bg md:col-start-2 md:row-start-2">
-        {ready ? (
-          <ReactFlowProvider>
-            <Canvas />
-          </ReactFlowProvider>
-        ) : (
-          <Skeleton />
-        )}
-        <CanvasHint />
-      </main>
+      {view === 'home' ? (
+        <div className="min-w-0 flex-1 md:col-span-3 md:row-start-2">
+          <Home onOpenWizard={() => setWizardOpen(true)} />
+        </div>
+      ) : (
+        <>
+          <main className="relative min-w-0 flex-1 bg-bg md:col-start-2 md:row-start-2">
+            {ready ? (
+              <ReactFlowProvider>
+                <Canvas />
+              </ReactFlowProvider>
+            ) : (
+              <Skeleton />
+            )}
+            <CanvasHint />
+          </main>
 
-      <div className="md:col-start-1 md:row-start-2">
-        <LensRail />
-      </div>
+          <div className="md:col-start-1 md:row-start-2">
+            <LensRail />
+          </div>
 
-      <div className="hidden md:col-start-3 md:row-start-2 md:block">
-        <RightPanel guideSlot={<GuidePanel />} />
-      </div>
+          <div className="hidden md:col-start-3 md:row-start-2 md:block">
+            <RightPanel guideSlot={<GuidePanel />} />
+          </div>
+        </>
+      )}
     </div>
     </MotionConfig>
   )

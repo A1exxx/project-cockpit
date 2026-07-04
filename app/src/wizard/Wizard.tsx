@@ -2,11 +2,30 @@
 // (SPEC.md §4, режим «Наставник»). Из ответов рождается карта-черновик.
 import { Plus, Sparkle, X } from '@phosphor-icons/react'
 import { AnimatePresence, motion } from 'motion/react'
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
+import { safeRead, safeRemove, safeWrite } from '../persistence/storage'
 import { useCockpitStore } from '../store'
 import type { WizardAnswers } from './draft'
 import { buildDraftDoc, slugify } from './draft'
 import { DEMO_PROJECT, WIZARD_STEPS } from './steps'
+
+const WIZARD_DRAFT_KEY = 'cockpit.wizardDraft.v1'
+const AUTOSAVE_DEBOUNCE_MS = 500
+
+interface WizardDraftRecord {
+  projectName: string
+  answers: WizardAnswers
+  stepIndex: number
+  updatedAt: string
+}
+
+function loadWizardDraft(): WizardDraftRecord | null {
+  return safeRead<WizardDraftRecord>(WIZARD_DRAFT_KEY)
+}
+
+function formatDraftDate(iso: string): string {
+  return new Date(iso).toLocaleDateString('ru-RU', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })
+}
 
 function emptyAnswers(): WizardAnswers {
   return {
@@ -275,6 +294,62 @@ export function Wizard({ onClose }: { onClose: () => void }) {
   const [stepIndex, setStepIndex] = useState(0)
   const [projectName, setProjectName] = useState('')
   const [answers, setAnswers] = useState<WizardAnswers>(emptyAnswers)
+  const [saveWarning, setSaveWarning] = useState<string | null>(null)
+
+  // Черновик, найденный при открытии мастера (до любых изменений в этой сессии) —
+  // если непуст, показываем плашку «Продолжить / Начать заново» вместо молчаливой перезаписи.
+  const [resumeDraft, setResumeDraft] = useState<WizardDraftRecord | null>(() => {
+    const draft = loadWizardDraft()
+    if (draft && (draft.projectName.trim().length > 0 || draft.stepIndex > 0)) return draft
+    return null
+  })
+
+  const isFirstAutosave = useRef(true)
+
+  function persistDraft() {
+    const result = safeWrite(WIZARD_DRAFT_KEY, {
+      projectName,
+      answers,
+      stepIndex,
+      updatedAt: new Date().toISOString(),
+    } satisfies WizardDraftRecord)
+    setSaveWarning(result.ok ? null : (result.warning ?? null))
+  }
+
+  // Автосейв в localStorage: debounce 500ms на изменение answers/projectName.
+  // Пропущен, пока плашка «Продолжить/Начать заново» не разрешена — иначе черновик из
+  // предыдущей сессии был бы затёрт пустым состоянием мастера ещё до выбора пользователя.
+  useEffect(() => {
+    if (resumeDraft) return
+    if (isFirstAutosave.current) {
+      isFirstAutosave.current = false
+      return
+    }
+    const id = window.setTimeout(persistDraft, AUTOSAVE_DEBOUNCE_MS)
+    return () => window.clearTimeout(id)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [projectName, answers, resumeDraft])
+
+  // Немедленный автосейв на смену шага (не ждать 500ms дебаунса).
+  useEffect(() => {
+    if (resumeDraft) return
+    if (isFirstAutosave.current) return
+    persistDraft()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [stepIndex])
+
+  function handleResumeDraft() {
+    if (!resumeDraft) return
+    setProjectName(resumeDraft.projectName)
+    setAnswers(resumeDraft.answers)
+    setStepIndex(resumeDraft.stepIndex)
+    setResumeDraft(null)
+  }
+
+  function handleRestartDraft() {
+    safeRemove(WIZARD_DRAFT_KEY)
+    setResumeDraft(null)
+  }
 
   // Esc должен закрыть мастер и НЕ долетать до глобального up() в LensRail
   // (тот слушает keydown на window в bubble-фазе). Capture-фаза перехватывает
@@ -312,6 +387,7 @@ export function Wizard({ onClose }: { onClose: () => void }) {
     }
     const doc = buildDraftDoc(projectName.trim(), answers)
     addProject(id, doc)
+    safeRemove(WIZARD_DRAFT_KEY)
     onClose()
   }
 
@@ -364,6 +440,32 @@ export function Wizard({ onClose }: { onClose: () => void }) {
         </div>
 
         <div className="min-h-0 flex-1 overflow-y-auto px-5 py-5">
+          {resumeDraft ? (
+            <div className="mb-5 flex items-center justify-between gap-3 rounded-lg border border-line p-3">
+              <span className="text-[13px] text-ink-dim">
+                Есть незаконченный черновик от {formatDraftDate(resumeDraft.updatedAt)}
+              </span>
+              <div className="flex shrink-0 items-center gap-2">
+                <button
+                  type="button"
+                  onClick={handleResumeDraft}
+                  className="rounded-lg border border-accent-dim bg-accent/12 px-3 py-1 text-[13px] text-accent transition-colors hover:bg-accent/20 active:scale-[0.98]"
+                >
+                  Продолжить
+                </button>
+                <button
+                  type="button"
+                  onClick={handleRestartDraft}
+                  className="rounded-lg px-3 py-1 text-[13px] text-ink-dim transition-colors hover:text-ink active:scale-[0.98]"
+                >
+                  Начать заново
+                </button>
+              </div>
+            </div>
+          ) : null}
+          {saveWarning ? (
+            <p className="mb-5 rounded-lg border border-risk/50 p-3 text-[13px] text-risk">{saveWarning}</p>
+          ) : null}
           <AnimatePresence mode="wait">
             <motion.div
               key={step.id}

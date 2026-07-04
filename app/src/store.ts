@@ -1,6 +1,7 @@
 import { create } from 'zustand'
 import rawSalesbotMap from './data/salesbot-map.json'
 import { ancestorPath } from './graph/nodeInfo'
+import { addDraft, loadDrafts, removeDraft, SALESBOT_ID } from './persistence/projects'
 import type { Lens, MapDoc } from './types'
 
 const demoMap = rawSalesbotMap as unknown as MapDoc
@@ -9,6 +10,17 @@ const demoMap = rawSalesbotMap as unknown as MapDoc
 export interface CockpitProject {
   id: string
   doc: MapDoc
+  /** false для salesbot (запечённый демо-слепок), true для проектов из мастера. */
+  isDraft: boolean
+  createdAt?: string
+  updatedAt?: string
+}
+
+/** Черновики из localStorage → CockpitProject[], отсортированы по updatedAt убыв. (MRU). */
+function loadDraftProjects(): CockpitProject[] {
+  return loadDrafts()
+    .sort((a, b) => b.updatedAt.localeCompare(a.updatedAt))
+    .map((d) => ({ id: d.id, doc: d.doc, isDraft: true, createdAt: d.createdAt, updatedAt: d.updatedAt }))
 }
 
 /** Таб правой панели. */
@@ -25,6 +37,8 @@ interface CockpitState {
   /** Список проектов, доступных через свитчер в шапке. */
   projects: CockpitProject[]
   activeProjectId: string
+  /** Домашний экран (список проектов) или карта. Начальное значение всегда 'home'. */
+  view: 'home' | 'map'
   /** Погружение на уровень ниже — разрешено только для нод, у которых есть дети. */
   drillInto: (id: string) => void
   /** Всплытие до крошки по индексу. -1 = корень. */
@@ -37,8 +51,14 @@ interface CockpitState {
   focusNode: (id: string) => void
   /** Переключает активный проект: обновляет doc, сбрасывает path/selectedId. Линзу не трогает. */
   switchProject: (id: string) => void
-  /** Регистрирует новый проект (черновик мастера) и сразу делает его активным. */
+  /** Регистрирует новый проект (черновик мастера), сохраняет его в storage и делает активным. */
   addProject: (id: string, doc: MapDoc) => void
+  /** Открывает проект и переключается на карту. */
+  openProject: (id: string) => void
+  /** Возврат на домашний экран. path/selectedId сбрасываются, линза НЕ трогается (см. §2 DESIGN-V2.md). */
+  goHome: () => void
+  /** Удаляет черновик из storage и стора. Если он был активным — активным становится salesbot. */
+  removeProject: (id: string) => void
 
   // --- ui-срез: управление правой панелью (изолирован от doc/path/lens). ---
   rightTab: RightTab
@@ -56,8 +76,9 @@ export const useCockpitStore = create<CockpitState>((set, get) => ({
   path: [],
   lens: 'blocks',
   selectedId: null,
-  projects: [{ id: 'salesbot', doc: demoMap }],
-  activeProjectId: 'salesbot',
+  projects: [{ id: SALESBOT_ID, doc: demoMap, isDraft: false }, ...loadDraftProjects()],
+  activeProjectId: SALESBOT_ID,
+  view: 'home',
 
   drillInto: (id) => {
     const hasChildren = get().doc.nodes.some((n) => n.parent === id)
@@ -90,8 +111,31 @@ export const useCockpitStore = create<CockpitState>((set, get) => ({
   },
 
   addProject: (id, doc) => {
-    set((state) => ({ projects: [...state.projects, { id, doc }] }))
+    addDraft(id, doc)
+    const now = new Date().toISOString()
+    set((state) => ({
+      projects: [...state.projects, { id, doc, isDraft: true, createdAt: now, updatedAt: now }],
+    }))
+    get().openProject(id)
+  },
+
+  openProject: (id) => {
     get().switchProject(id)
+    set({ view: 'map' })
+  },
+
+  goHome: () => {
+    // path/selectedId/lens намеренно НЕ трогаем (DESIGN-V2.md §2): возврат в проект
+    // из Home должен показать то же место карты, где пользователь был.
+    set({ view: 'home' })
+  },
+
+  removeProject: (id) => {
+    if (id === SALESBOT_ID) return
+    removeDraft(id)
+    const wasActive = get().activeProjectId === id
+    set((state) => ({ projects: state.projects.filter((p) => p.id !== id) }))
+    if (wasActive) get().switchProject(SALESBOT_ID)
   },
 
   rightTab: 'node',
